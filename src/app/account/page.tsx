@@ -35,9 +35,12 @@ export default function AccountPage() {
   }, [supabase]);
 
   const logout = async () => {
-    await supabase.auth.signOut();
-    router.push("/");
-    router.refresh();
+    try {
+      await supabase.auth.signOut({ scope: "local" });
+    } catch (err) {
+      console.error("[account logout] signOut failed", err);
+    }
+    window.location.href = "/";
   };
 
   if (loading) {

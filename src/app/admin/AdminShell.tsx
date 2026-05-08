@@ -42,10 +42,13 @@ export default function AdminShell({
   };
 
   const logout = async () => {
-    const supabase = createClient();
-    await supabase.auth.signOut();
-    router.push("/");
-    router.refresh();
+    try {
+      const supabase = createClient();
+      await supabase.auth.signOut({ scope: "local" });
+    } catch (err) {
+      console.error("[admin logout] signOut failed", err);
+    }
+    window.location.href = "/";
   };
 
   return (
