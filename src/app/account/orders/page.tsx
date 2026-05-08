@@ -24,35 +24,50 @@ const STATUS_COLOR: Record<DbOrder["status"], string> = {
 };
 
 export default function OrdersPage() {
-  const supabase = createClient();
   const [orders, setOrders] = useState<DbOrder[] | null>(null);
   const [counts, setCounts] = useState<Record<string, number>>({});
 
   useEffect(() => {
+    let cancelled = false;
     const load = async () => {
-      const { data: { user } } = await supabase.auth.getUser();
-      if (!user) {
-        setOrders([]);
-        return;
-      }
-      const { data: list } = await supabase
-        .from("orders")
-        .select("*")
-        .eq("user_id", user.id)
-        .order("created_at", { ascending: false });
-      setOrders((list as DbOrder[]) ?? []);
+      try {
+        const supabase = createClient();
+        const { data: { user } } = await supabase.auth.getUser();
+        if (cancelled) return;
+        if (!user) {
+          setOrders([]);
+          return;
+        }
+        const { data: list } = await supabase
+          .from("orders")
+          .select("*")
+          .eq("user_id", user.id)
+          .order("created_at", { ascending: false });
+        if (cancelled) return;
+        const orderList = (list as DbOrder[]) ?? [];
+        setOrders(orderList);
 
-      const { data: items } = await supabase
-        .from("order_items")
-        .select("order_id");
-      const map: Record<string, number> = {};
-      (items as { order_id: string }[] | null)?.forEach((i) => {
-        map[i.order_id] = (map[i.order_id] ?? 0) + 1;
-      });
-      setCounts(map);
+        if (orderList.length > 0) {
+          const orderIds = orderList.map((o) => o.id);
+          const { data: items } = await supabase
+            .from("order_items")
+            .select("order_id")
+            .in("order_id", orderIds);
+          if (cancelled) return;
+          const map: Record<string, number> = {};
+          (items as { order_id: string }[] | null)?.forEach((i) => {
+            map[i.order_id] = (map[i.order_id] ?? 0) + 1;
+          });
+          setCounts(map);
+        }
+      } catch (err) {
+        console.error("[OrdersPage] load failed", err);
+        if (!cancelled) setOrders([]);
+      }
     };
     load();
-  }, [supabase]);
+    return () => { cancelled = true; };
+  }, []);
 
   if (orders === null) {
     return (

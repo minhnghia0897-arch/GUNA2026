@@ -28,6 +28,7 @@ export default function CheckoutPage() {
   const [step, setStep] = useState<1 | 2 | 3>(1);
   const [submitting, setSubmitting] = useState(false);
   const [orderId, setOrderId] = useState("");
+  const [orderAuthed, setOrderAuthed] = useState(false);
   const [voucher, setVoucher] = useState<CheckoutVoucher | null>(null);
 
   useEffect(() => {
@@ -183,6 +184,7 @@ export default function CheckoutPage() {
 
     const id = created.order_code;
     setOrderId(id);
+    setOrderAuthed(!!user);
     try { sessionStorage.removeItem("farmo-checkout-voucher"); } catch {}
     clear();
     setStep(3);
@@ -256,7 +258,11 @@ export default function CheckoutPage() {
               <p className="text-xs text-gray-500">Hãy lưu lại mã đơn để tra cứu sau.</p>
             </div>
             <div className="flex gap-3 justify-center flex-wrap">
-              <Link href={`/account/orders/${orderId}`} className="btn-gold">Xem chi tiết đơn</Link>
+              {orderAuthed ? (
+                <Link href={`/account/orders/${encodeURIComponent(orderId)}`} className="btn-gold">Xem chi tiết đơn</Link>
+              ) : (
+                <Link href="/account/login" className="btn-gold">Đăng nhập để theo dõi đơn</Link>
+              )}
               <Link href="/products" className="btn-outline-gold">Tiếp tục mua sắm</Link>
             </div>
           </div>
