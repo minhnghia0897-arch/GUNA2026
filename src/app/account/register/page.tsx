@@ -52,17 +52,18 @@ export default function RegisterPage() {
         toast.error("Đăng ký thất bại");
         return;
       }
-      if (data.user) {
-        await supabase.from("profiles").upsert({
-          id: data.user.id,
-          email: form.email,
-          full_name: form.name,
-          phone: form.phone,
-        }, { onConflict: "id" });
+
+      // Profile được trigger handle_new_user tự tạo từ metadata (full_name + phone)
+      if (data.session) {
+        // Email confirm tắt → đã có session → vào thẳng account
+        toast.success(`Chào mừng ${form.name}!`);
+        router.push("/account");
+        router.refresh();
+      } else {
+        // Email confirm bật → user phải xác minh trước khi login được
+        toast.success("Đăng ký thành công! Vui lòng kiểm tra email để xác minh tài khoản.");
+        setForm({ name: "", email: "", phone: "", password: "", confirmPassword: "", agree: false });
       }
-      toast.success(`Chào mừng ${form.name}! Vui lòng kiểm tra email để xác minh.`);
-      router.push("/account");
-      router.refresh();
     } catch (err) {
       console.error("[register] threw", err);
       setError("Lỗi: " + (err instanceof Error ? err.message : "không xác định"));

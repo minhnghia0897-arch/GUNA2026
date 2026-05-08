@@ -13,6 +13,14 @@ const STATUSES = [
   { key: "cancelled", label: "Đã hủy" },
 ];
 
+const VALID_NEXT: Record<string, string[]> = {
+  pending: ["pending", "confirmed", "cancelled"],
+  confirmed: ["confirmed", "shipping", "cancelled"],
+  shipping: ["shipping", "delivered", "cancelled"],
+  delivered: ["delivered", "cancelled"],
+  cancelled: ["cancelled"],
+};
+
 export default function OrderStatusUpdater({
   orderId,
   currentStatus,
@@ -38,7 +46,11 @@ export default function OrderStatusUpdater({
         .eq("id", orderId);
       if (error) {
         console.error("[OrderStatusUpdater] update error", error);
-        toast.error("Cập nhật thất bại: " + error.message);
+        const raw = error.message ?? "";
+        const friendly = raw.includes("INVALID_STATUS_TRANSITION")
+          ? `Không thể chuyển từ "${currentStatus}" sang "${status}". Vui lòng chọn trạng thái hợp lệ kế tiếp.`
+          : "Cập nhật thất bại: " + raw;
+        toast.error(friendly);
         return;
       }
       toast.success("Đã cập nhật đơn hàng");
@@ -64,10 +76,11 @@ export default function OrderStatusUpdater({
             onChange={(e) => setStatus(e.target.value)}
             className="input-field"
           >
-            {STATUSES.map((s) => (
+            {STATUSES.filter((s) => (VALID_NEXT[currentStatus] ?? [currentStatus]).includes(s.key)).map((s) => (
               <option key={s.key} value={s.key}>{s.label}</option>
             ))}
           </select>
+          <p className="text-xs text-gray-400 mt-1">Chỉ hiển thị các trạng thái kế tiếp hợp lệ</p>
         </div>
         <div>
           <label className="text-xs text-gray-500 uppercase mb-1 block">Mã vận đơn</label>

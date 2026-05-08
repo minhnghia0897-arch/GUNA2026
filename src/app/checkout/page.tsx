@@ -196,7 +196,9 @@ export default function CheckoutPage() {
     if (rpcErr || !rpcData) {
       const raw = rpcErr?.message ?? "";
       let friendly = "Đặt hàng thất bại, vui lòng thử lại";
-      if (raw.includes("INSUFFICIENT_STOCK")) {
+      if (raw.includes("RATE_LIMIT")) {
+        friendly = "Số điện thoại này đã đặt quá 5 đơn trong 1 giờ. Vui lòng thử lại sau.";
+      } else if (raw.includes("INSUFFICIENT_STOCK")) {
         friendly = "Sản phẩm vừa hết hàng, vui lòng kiểm tra lại giỏ hàng";
       } else if (raw.includes("VOUCHER_EXPIRED")) {
         friendly = "Voucher đã hết hạn";
