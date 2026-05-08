@@ -89,31 +89,41 @@ export function WishlistProvider({ children }: { children: ReactNode }) {
     };
 
     const init = async () => {
-      const { data: { user } } = await supabase.auth.getUser();
-      if (!mounted) return;
-      if (user) {
-        setUserId(user.id);
-        await syncForUser(user.id);
-      } else {
-        setItems(readLocal());
+      try {
+        const { data: { user } } = await supabase.auth.getUser();
+        if (!mounted) return;
+        if (user) {
+          setUserId(user.id);
+          await syncForUser(user.id);
+        } else {
+          setItems(readLocal());
+        }
+      } catch (err) {
+        console.error("[WishlistContext] init failed", err);
+        if (mounted) setItems(readLocal());
+      } finally {
+        if (mounted) setHydrated(true);
       }
-      setHydrated(true);
     };
 
     init();
 
     const { data: sub } = supabase.auth.onAuthStateChange(async (event, session) => {
       if (!mounted) return;
-      const newUid = session?.user?.id ?? null;
-      setUserId(newUid);
-      if (newUid) {
-        if (event === "SIGNED_IN") {
-          await syncForUser(newUid);
+      try {
+        const newUid = session?.user?.id ?? null;
+        setUserId(newUid);
+        if (newUid) {
+          if (event === "SIGNED_IN") {
+            await syncForUser(newUid);
+          } else {
+            setItems(await fetchWishlist(newUid));
+          }
         } else {
-          setItems(await fetchWishlist(newUid));
+          setItems([]);
         }
-      } else {
-        setItems([]);
+      } catch (err) {
+        console.error("[WishlistContext] auth change handler failed", err);
       }
     });
 
