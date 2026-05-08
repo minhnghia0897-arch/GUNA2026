@@ -48,7 +48,11 @@ export default function AdminShell({
     } catch (err) {
       console.error("[admin logout] signOut failed", err);
     }
-    window.location.href = "/";
+    const form = document.createElement("form");
+    form.method = "POST";
+    form.action = "/api/auth/signout?redirect=/";
+    document.body.appendChild(form);
+    form.submit();
   };
 
   return (

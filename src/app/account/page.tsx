@@ -40,7 +40,11 @@ export default function AccountPage() {
     } catch (err) {
       console.error("[account logout] signOut failed", err);
     }
-    window.location.href = "/";
+    const form = document.createElement("form");
+    form.method = "POST";
+    form.action = "/api/auth/signout?redirect=/";
+    document.body.appendChild(form);
+    form.submit();
   };
 
   if (loading) {
