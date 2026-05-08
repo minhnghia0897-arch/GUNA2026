@@ -1,10 +1,8 @@
 "use client";
 
 import { useState } from "react";
-import { createClient } from "@/lib/supabase/client";
 
 export default function AdminLoginPage() {
-  const supabase = createClient();
   const [form, setForm] = useState({ email: "", password: "" });
   const [showPwd, setShowPwd] = useState(false);
   const [loading, setLoading] = useState(false);
@@ -15,32 +13,16 @@ export default function AdminLoginPage() {
     setError("");
     setLoading(true);
     try {
-      const { data: signInData, error: signInErr } = await supabase.auth.signInWithPassword({
-        email: form.email.trim(),
-        password: form.password,
+      const res = await fetch("/api/auth/admin-signin", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ email: form.email.trim(), password: form.password }),
       });
-
-      if (signInErr || !signInData.user) {
-        setError(
-          signInErr?.message === "Invalid login credentials"
-            ? "Email hoặc mật khẩu không đúng"
-            : (signInErr?.message ?? "Đăng nhập thất bại")
-        );
+      const json = await res.json().catch(() => ({}));
+      if (!res.ok) {
+        setError(json.error ?? "Đăng nhập thất bại");
         return;
       }
-
-      const { data: profile } = await supabase
-        .from("profiles")
-        .select("role")
-        .eq("id", signInData.user.id)
-        .maybeSingle();
-
-      if (!profile || (profile.role !== "admin" && profile.role !== "staff")) {
-        await supabase.auth.signOut({ scope: "local" });
-        setError("Tài khoản không có quyền quản trị. Vui lòng dùng tài khoản admin.");
-        return;
-      }
-
       window.location.href = "/admin";
       return;
     } catch (err) {
