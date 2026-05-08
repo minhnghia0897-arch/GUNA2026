@@ -1,11 +1,9 @@
 "use client";
 
 import { useState } from "react";
-import { useRouter } from "next/navigation";
 import { createClient } from "@/lib/supabase/client";
 
 export default function AdminLoginPage() {
-  const router = useRouter();
   const supabase = createClient();
   const [form, setForm] = useState({ email: "", password: "" });
   const [showPwd, setShowPwd] = useState(false);
@@ -45,9 +43,7 @@ export default function AdminLoginPage() {
       return;
     }
 
-    setLoading(false);
-    router.push("/admin");
-    router.refresh();
+    window.location.href = "/admin";
   };
 
   return (
