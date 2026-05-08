@@ -12,7 +12,7 @@ export default async function ContactSection() {
 
   const items = [
     { Icon: IconPhone, label: "Hotline", value: settings?.hotline ?? "0901 234 567" },
-    { Icon: IconMail, label: "Email", value: settings?.email ?? "info@farmo.vn" },
+    { Icon: IconMail, label: "Email", value: settings?.email ?? "gunaquatet@gmail.com" },
     { Icon: IconMapPin, label: "Địa chỉ", value: settings?.address_line ?? "—" },
     { Icon: IconClock, label: "Giờ mở cửa", value: settings?.business_hours ?? "T2 - T7: 8:00 - 20:00" },
   ];

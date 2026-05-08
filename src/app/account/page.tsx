@@ -54,7 +54,7 @@ export default function AccountPage() {
         <PageHeader title="Tài Khoản" crumbs={[{ label: "Trang Chủ", href: "/" }, { label: "Tài Khoản" }]} />
         <div className="max-w-md mx-auto px-4 py-20 text-center">
           <div className="text-6xl mb-6 opacity-30">👤</div>
-          <h2 className="font-serif text-2xl text-burgundy mb-3">Chào mừng đến với FarMơ</h2>
+          <h2 className="font-serif text-2xl text-burgundy mb-3">Chào mừng đến với GUNA GIFT</h2>
           <p className="text-gray-500 mb-6">Đăng nhập để xem đơn hàng, điểm thành viên và nhiều ưu đãi khác</p>
           <div className="flex gap-3 justify-center">
             <Link href="/account/login" className="btn-gold">Đăng nhập</Link>

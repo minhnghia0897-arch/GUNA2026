@@ -245,7 +245,7 @@ export default function CheckoutPage() {
               </svg>
             </div>
             <h2 className="font-serif text-3xl text-burgundy mb-3">Đặt hàng thành công!</h2>
-            <p className="text-gray-600 mb-2">Cảm ơn bạn đã mua sắm tại FarMơ.</p>
+            <p className="text-gray-600 mb-2">Cảm ơn bạn đã mua sắm tại GUNA GIFT.</p>
             <p className="text-gray-600 mb-6">
               Mã đơn hàng: <span className="font-bold text-burgundy">{orderId}</span>
             </p>

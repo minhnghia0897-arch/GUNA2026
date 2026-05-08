@@ -60,7 +60,7 @@ export default function AdminShell({
             <span className="text-gold font-serif font-bold">F</span>
           </div>
           <div>
-            <p className="font-serif text-gold text-base">FarMơ</p>
+            <p className="font-serif text-gold text-base">GUNA GIFT</p>
             <p className="text-[10px] text-gold/50 uppercase tracking-[0.2em]">Quản trị</p>
           </div>
         </div>

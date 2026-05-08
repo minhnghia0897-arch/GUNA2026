@@ -5,7 +5,7 @@ import PageHeader from "@/components/PageHeader";
 import SearchClient from "./SearchClient";
 
 const TITLE = "Tìm Kiếm Sản Phẩm";
-const DESC = "Tìm kiếm sản phẩm FarMơ - hộp quà cưới, mật ong, set quà tặng cao cấp.";
+const DESC = "Tìm kiếm sản phẩm GUNA GIFT - hộp quà cưới, mật ong, set quà tặng cao cấp.";
 
 export const metadata: Metadata = {
   title: TITLE,

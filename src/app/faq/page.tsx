@@ -6,7 +6,7 @@ import JsonLd from "@/components/JsonLd";
 import FaqClient from "./FaqClient";
 
 const TITLE = "Câu Hỏi Thường Gặp";
-const DESC = "Tìm câu trả lời nhanh cho các thắc mắc về đặt hàng, vận chuyển, sản phẩm, thanh toán và đổi trả tại FarMơ.";
+const DESC = "Tìm câu trả lời nhanh cho các thắc mắc về đặt hàng, vận chuyển, sản phẩm, thanh toán và đổi trả tại GUNA GIFT.";
 
 export const revalidate = 300;
 
@@ -41,7 +41,7 @@ export default async function FAQPage() {
           items: g.items.map((i) => ({ q: i.question, a: i.answer })),
         }))}
         hotline={settings?.hotline ?? "0901 234 567"}
-        email={settings?.email ?? "info@farmo.vn"}
+        email={settings?.email ?? "gunaquatet@gmail.com"}
       />
     </>
   );

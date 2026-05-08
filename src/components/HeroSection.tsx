@@ -8,16 +8,16 @@ export default async function HeroSection() {
   const banner = banners[0];
 
   const eyebrow = settings?.hero_eyebrow ?? "Chất lượng hàng đầu";
-  const title = banner?.title ?? "Trải Nghiệm Sự Thanh Lịch Của Sức Khỏe Với FarMơ";
+  const title = banner?.title ?? "Trải Nghiệm Sự Thanh Lịch Của Sức Khỏe Với GUNA GIFT";
   const subtitle =
     banner?.subtitle ??
-    "FarMơ cao cấp, được tuyển chọn kỹ lưỡng từ những nguồn nguyên liệu thiên nhiên. Sản phẩm tinh khiết, giàu dinh dưỡng, mang đến sức khỏe và vẻ đẹp cho gia đình bạn.";
+    "GUNA GIFT cao cấp, được tuyển chọn kỹ lưỡng từ những nguồn nguyên liệu thiên nhiên. Sản phẩm tinh khiết, giàu dinh dưỡng, mang đến sức khỏe và vẻ đẹp cho gia đình bạn.";
   const ctaPrimary = settings?.hero_cta_primary ?? "Khám Phá Ngay";
   const ctaPrimaryLink = settings?.hero_cta_primary_link ?? "/products";
   const ctaSecondary = settings?.hero_cta_secondary ?? "Tìm Hiểu Thêm";
   const ctaSecondaryLink = settings?.hero_cta_secondary_link ?? "#about";
   const heroImage = banner?.image_url ?? "/images/product-1.svg";
-  const shopName = settings?.shop_name ?? "FarMơ";
+  const shopName = settings?.shop_name ?? "GUNA GIFT";
 
   return (
     <section className="relative bg-burgundy min-h-[85vh] flex items-center overflow-hidden">

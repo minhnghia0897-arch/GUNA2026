@@ -41,7 +41,7 @@ export default function CookieConsent() {
           <div className="flex-1">
             <h3 className="font-serif text-lg text-burgundy mb-1">Chúng tôi sử dụng cookies</h3>
             <p className="text-sm text-gray-600 font-light leading-relaxed">
-              FarMơ sử dụng cookies để cải thiện trải nghiệm mua sắm, ghi nhớ giỏ hàng và phân tích lưu lượng.
+              GUNA GIFT sử dụng cookies để cải thiện trải nghiệm mua sắm, ghi nhớ giỏ hàng và phân tích lưu lượng.
               Bằng cách tiếp tục, bạn đồng ý với{" "}
               <Link href="/policies/privacy" className="text-burgundy hover:text-gold underline">
                 chính sách bảo mật

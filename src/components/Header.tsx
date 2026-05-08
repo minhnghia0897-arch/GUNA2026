@@ -27,7 +27,7 @@ export default function Header() {
 
   if (pathname.startsWith("/admin")) return null;
 
-  const shopName = settings?.shop_name ?? "FarMơ";
+  const shopName = settings?.shop_name ?? "GUNA GIFT";
   const tagline = settings?.shop_tagline ?? "Cao Cấp";
   const logoUrl = settings?.logo_url;
   const logoMark = settings?.logo_mark ?? "F";

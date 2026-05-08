@@ -28,7 +28,7 @@ export async function generateMetadata({
   const { slug } = await params;
   const article = await getArticle(slug);
   if (!article) return { title: "Không tìm thấy" };
-  const desc = article.excerpt ?? `${article.title} - Bài viết từ FarMơ.`;
+  const desc = article.excerpt ?? `${article.title} - Bài viết từ GUNA GIFT.`;
   return {
     title: article.title,
     description: desc,

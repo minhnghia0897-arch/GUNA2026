@@ -6,7 +6,7 @@ import { fetchArticles } from "@/lib/supabase/queries";
 import PageHeader from "@/components/PageHeader";
 
 const TITLE = "Blog & Tin Tức";
-const DESC = "Cập nhật xu hướng, mẹo hay và câu chuyện thú vị về quà cưới, mật ong và quà tặng cao cấp từ FarMơ.";
+const DESC = "Cập nhật xu hướng, mẹo hay và câu chuyện thú vị về quà cưới, mật ong và quà tặng cao cấp từ GUNA GIFT.";
 
 export const revalidate = 300;
 
@@ -29,7 +29,7 @@ export default async function BlogPage() {
     <>
       <PageHeader
         title="Blog & Tin Tức"
-        subtitle="Cập nhật xu hướng, mẹo hay và câu chuyện thú vị từ FarMơ"
+        subtitle="Cập nhật xu hướng, mẹo hay và câu chuyện thú vị từ GUNA GIFT"
         crumbs={[{ label: "Trang Chủ", href: "/" }, { label: "Blog" }]}
       />
 

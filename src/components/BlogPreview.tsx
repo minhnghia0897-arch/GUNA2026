@@ -20,7 +20,7 @@ export default async function BlogPreview() {
           <h2 className="font-serif text-3xl sm:text-4xl text-burgundy mb-4">Bài Viết Mới Nhất</h2>
           <div className="w-20 h-[1px] bg-gold mx-auto mb-6" />
           <p className="text-gray-700 font-medium max-w-2xl mx-auto leading-relaxed">
-            Cập nhật xu hướng quà tặng, mẹo bảo quản mật ong, và những câu chuyện thú vị từ FarMơ.
+            Cập nhật xu hướng quà tặng, mẹo bảo quản mật ong, và những câu chuyện thú vị từ GUNA GIFT.
           </p>
         </div>
 

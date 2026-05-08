@@ -5,7 +5,7 @@ import AdminShell from "./AdminShell";
 export const dynamic = "force-dynamic";
 
 export const metadata = {
-  title: "Quản trị | FarMơ",
+  title: "Quản trị | GUNA GIFT",
   robots: { index: false, follow: false },
 };
 

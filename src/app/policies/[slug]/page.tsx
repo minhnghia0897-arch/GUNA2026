@@ -52,7 +52,7 @@ export async function generateMetadata({
   const { slug } = await params;
   const policy = await fetchPolicy(slug);
   if (!policy) return { title: "Không tìm thấy" };
-  const desc = policy.title + " - FarMơ";
+  const desc = policy.title + " - GUNA GIFT";
   return {
     title: policy.title,
     description: desc,

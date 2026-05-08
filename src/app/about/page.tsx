@@ -44,7 +44,7 @@ function escape(s: string): string {
 export async function generateMetadata(): Promise<Metadata> {
   const policy = await fetchPolicy("about");
   const title = policy?.title ?? "Về Chúng Tôi";
-  const desc = "Câu chuyện, sứ mệnh và giá trị cốt lõi của FarMơ - thương hiệu quà tặng cao cấp Việt Nam.";
+  const desc = "Câu chuyện, sứ mệnh và giá trị cốt lõi của GUNA GIFT - thương hiệu quà tặng cao cấp Việt Nam.";
   return {
     title,
     description: desc,
@@ -58,7 +58,7 @@ export default async function AboutPage() {
   const [policy, settings] = await Promise.all([fetchPolicy("about"), fetchSiteSettings()]);
   if (!policy) notFound();
 
-  const shopName = settings?.shop_name ?? "FarMơ";
+  const shopName = settings?.shop_name ?? "GUNA GIFT";
 
   return (
     <>

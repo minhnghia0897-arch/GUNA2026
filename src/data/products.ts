@@ -34,7 +34,7 @@ export const products: Product[] = [
     gallery: [IMG[0], IMG[2], IMG[1]],
     shortDesc: "Hộp quà cưới sang trọng với họa tiết cổ điển, màu đỏ truyền thống.",
     description:
-      "Hộp quà cưới Happy Wedding phiên bản đỏ là lựa chọn hoàn hảo cho ngày trọng đại. Thiết kế lấy cảm hứng từ nghệ thuật Art Deco với họa tiết hoa văn vàng tinh xảo, tone đỏ đô sang trọng. Bên trong gồm các sản phẩm FarMơ cao cấp được tuyển chọn kỹ lưỡng, đảm bảo gửi gắm trọn vẹn lời chúc tốt đẹp đến người nhận.",
+      "Hộp quà cưới Happy Wedding phiên bản đỏ là lựa chọn hoàn hảo cho ngày trọng đại. Thiết kế lấy cảm hứng từ nghệ thuật Art Deco với họa tiết hoa văn vàng tinh xảo, tone đỏ đô sang trọng. Bên trong gồm các sản phẩm GUNA GIFT cao cấp được tuyển chọn kỹ lưỡng, đảm bảo gửi gắm trọn vẹn lời chúc tốt đẹp đến người nhận.",
     specs: [
       { label: "Kích thước", value: "20 x 20 x 8 cm" },
       { label: "Trọng lượng", value: "500g" },

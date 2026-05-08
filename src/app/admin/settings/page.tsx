@@ -4,7 +4,7 @@ import {
   IconArticle, IconRevenue, IconTruck, IconMail, IconCustomers, IconVoucher,
 } from "@/components/icons";
 
-export const metadata = { title: "Cài đặt | Quản trị FarMơ" };
+export const metadata = { title: "Cài đặt | Quản trị GUNA GIFT" };
 
 const SECTIONS = [
   { title: "Thông tin shop", description: "Tên cửa hàng, logo, hotline, email, địa chỉ, social", Icon: IconUser, href: "/admin/settings/general", ready: true },

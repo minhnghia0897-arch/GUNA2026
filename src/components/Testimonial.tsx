@@ -7,12 +7,12 @@ export default function Testimonial() {
     },
     {
       name: "Trần Văn Đức",
-      content: "Mua tặng mẹ nhân ngày sinh nhật. Mẹ rất thích vì FarMơ nguyên chất, sản phẩm đẹp và tinh tế. Đã mua lần thứ 3 rồi, lần nào chất lượng cũng đều rất tốt.",
+      content: "Mua tặng mẹ nhân ngày sinh nhật. Mẹ rất thích vì GUNA GIFT nguyên chất, sản phẩm đẹp và tinh tế. Đã mua lần thứ 3 rồi, lần nào chất lượng cũng đều rất tốt.",
       rating: 5,
     },
     {
       name: "Lê Thị Thanh Tâm",
-      content: "Đóng gói rất cẩn thận, giao hàng nhanh. Sản phẩm FarMơ thơm ngon, chất lượng tuyệt vời. Sẽ tiếp tục ủng hộ và giới thiệu cho bạn bè!",
+      content: "Đóng gói rất cẩn thận, giao hàng nhanh. Sản phẩm GUNA GIFT thơm ngon, chất lượng tuyệt vời. Sẽ tiếp tục ủng hộ và giới thiệu cho bạn bè!",
       rating: 5,
     },
   ];

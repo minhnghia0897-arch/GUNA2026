@@ -32,7 +32,7 @@ export async function generateMetadata(): Promise<Metadata> {
     title: { default: title, template: `%s | ${settings?.shop_name ?? SITE.name}` },
     description,
     applicationName: settings?.shop_name ?? SITE.fullName,
-    keywords: settings?.meta_keywords ?? ["FarMơ", "quà cưới", "mật ong", "quà tặng"],
+    keywords: settings?.meta_keywords ?? ["GUNA GIFT", "quà cưới", "mật ong", "quà tặng"],
     authors: [{ name: settings?.shop_name ?? SITE.fullName }],
     creator: settings?.shop_name ?? SITE.fullName,
     publisher: settings?.shop_name ?? SITE.fullName,

@@ -56,7 +56,7 @@ export default function ProductsClient({
     <>
       <PageHeader
         title="Bộ Sưu Tập Sản Phẩm"
-        subtitle="Khám phá toàn bộ sản phẩm FarMơ cao cấp được tuyển chọn kỹ lưỡng"
+        subtitle="Khám phá toàn bộ sản phẩm GUNA GIFT cao cấp được tuyển chọn kỹ lưỡng"
         crumbs={[{ label: "Trang Chủ", href: "/" }, { label: "Sản Phẩm" }]}
       />
 

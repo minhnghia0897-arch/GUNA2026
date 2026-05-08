@@ -21,7 +21,7 @@ export default function FaqClient({
     <>
       <PageHeader
         title="Câu Hỏi Thường Gặp"
-        subtitle="Tìm câu trả lời nhanh cho các thắc mắc về sản phẩm và dịch vụ FarMơ"
+        subtitle="Tìm câu trả lời nhanh cho các thắc mắc về sản phẩm và dịch vụ GUNA GIFT"
         crumbs={[{ label: "Trang Chủ", href: "/" }, { label: "FAQ" }]}
       />
 
@@ -70,7 +70,7 @@ export default function FaqClient({
 
         <div className="mt-16 bg-gradient-to-br from-burgundy to-burgundy-900 text-white rounded-2xl p-8 text-center">
           <h3 className="font-serif text-2xl mb-3">Vẫn còn thắc mắc?</h3>
-          <p className="text-white/70 text-sm mb-6">Đội ngũ tư vấn FarMơ sẵn sàng hỗ trợ bạn 24/7</p>
+          <p className="text-white/70 text-sm mb-6">Đội ngũ tư vấn GUNA GIFT sẵn sàng hỗ trợ bạn 24/7</p>
           <div className="flex flex-wrap gap-3 justify-center">
             <a href={`tel:${phoneClean}`} className="btn-gold">📞 {hotline}</a>
             <a href={`mailto:${email}`} className="btn-outline-gold">✉️ {email}</a>

@@ -4,7 +4,7 @@ import { fetchAllProducts, fetchCategories } from "@/lib/supabase/queries";
 import ProductsClient from "./ProductsClient";
 
 const TITLE = "Bộ Sưu Tập Sản Phẩm";
-const DESC = "Khám phá toàn bộ sản phẩm FarMơ cao cấp - hộp quà cưới, mật ong, set quà tặng. Miễn phí giao hàng từ 500.000đ.";
+const DESC = "Khám phá toàn bộ sản phẩm GUNA GIFT cao cấp - hộp quà cưới, mật ong, set quà tặng. Miễn phí giao hàng từ 500.000đ.";
 
 export const revalidate = 60;
 

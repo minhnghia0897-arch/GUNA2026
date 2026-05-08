@@ -27,7 +27,7 @@ export const mockReviews: Record<string, Review[]> = {
       author: "Trần Hữu Phúc",
       rating: 5,
       content:
-        "Đặt 50 hộp cho đám cưới, FarMơ hỗ trợ rất nhiệt tình, giảm giá tốt. Khách mời ai cũng khen hộp đẹp. Sẽ ủng hộ tiếp!",
+        "Đặt 50 hộp cho đám cưới, GUNA GIFT hỗ trợ rất nhiệt tình, giảm giá tốt. Khách mời ai cũng khen hộp đẹp. Sẽ ủng hộ tiếp!",
       date: "2026-04-15",
       verified: true,
       helpful: 18,
