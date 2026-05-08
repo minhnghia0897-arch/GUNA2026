@@ -73,13 +73,19 @@ export default function NewsletterPopup() {
       return;
     }
     setSubmitting(true);
-    await new Promise((r) => setTimeout(r, 500));
     try {
-      localStorage.setItem(STORAGE_KEY, JSON.stringify({ subscribed: true, email, at: Date.now() }));
-    } catch {}
-    setSubmitting(false);
-    setShow(false);
-    toast.success("Đã đăng ký! Mã FARMO10 đã gửi đến email của bạn.");
+      await new Promise((r) => setTimeout(r, 500));
+      try {
+        localStorage.setItem(STORAGE_KEY, JSON.stringify({ subscribed: true, email, at: Date.now() }));
+      } catch {}
+      setShow(false);
+      toast.success("Đã đăng ký! Mã FARMO10 đã gửi đến email của bạn.");
+    } catch (err) {
+      console.error("[NewsletterPopup] submit threw", err);
+      toast.error("Lỗi: " + (err instanceof Error ? err.message : "không xác định"));
+    } finally {
+      setSubmitting(false);
+    }
   };
 
   if (!show) return null;
