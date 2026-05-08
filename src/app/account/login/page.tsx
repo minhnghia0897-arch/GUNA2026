@@ -21,21 +21,27 @@ function LoginForm() {
     e.preventDefault();
     setError("");
     setLoading(true);
-    const { error: err } = await supabase.auth.signInWithPassword({
-      email: form.email,
-      password: form.password,
-    });
-    setLoading(false);
-    if (err) {
-      setError(err.message === "Invalid login credentials" ? "Email hoặc mật khẩu không đúng" : err.message);
-      toast.error("Đăng nhập thất bại");
-      return;
+    try {
+      const { error: err } = await supabase.auth.signInWithPassword({
+        email: form.email,
+        password: form.password,
+      });
+      if (err) {
+        setError(err.message === "Invalid login credentials" ? "Email hoặc mật khẩu không đúng" : err.message);
+        toast.error("Đăng nhập thất bại");
+        return;
+      }
+      toast.success("Đăng nhập thành công");
+      const redirect = params.get("redirect");
+      const safeRedirect = redirect && redirect.startsWith("/") && !redirect.startsWith("//") ? redirect : "/account";
+      router.push(safeRedirect);
+      router.refresh();
+    } catch (err) {
+      console.error("[login] threw", err);
+      setError("Lỗi: " + (err instanceof Error ? err.message : "không xác định"));
+    } finally {
+      setLoading(false);
     }
-    toast.success("Đăng nhập thành công");
-    const redirect = params.get("redirect");
-    const safeRedirect = redirect && redirect.startsWith("/") && !redirect.startsWith("//") ? redirect : "/account";
-    router.push(safeRedirect);
-    router.refresh();
   };
 
   return (

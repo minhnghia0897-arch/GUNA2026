@@ -34,24 +34,29 @@ export default function ImageUpload({
       return;
     }
     setUploading(true);
-    const supabase = createClient();
-    const dot = file.name.lastIndexOf(".");
-    const ext = dot >= 0 ? file.name.slice(dot + 1).toLowerCase() : "jpg";
-    const path = `${folder ? folder + "/" : ""}${Date.now()}-${Math.random().toString(36).slice(2, 8)}.${ext}`;
-    const { error } = await supabase.storage.from(bucket).upload(path, file, {
-      cacheControl: "3600",
-      upsert: false,
-    });
-    if (error) {
-      console.error("[ImageUpload] upload error", { bucket, path, error });
+    try {
+      const supabase = createClient();
+      const dot = file.name.lastIndexOf(".");
+      const ext = dot >= 0 ? file.name.slice(dot + 1).toLowerCase() : "jpg";
+      const path = `${folder ? folder + "/" : ""}${Date.now()}-${Math.random().toString(36).slice(2, 8)}.${ext}`;
+      const { error } = await supabase.storage.from(bucket).upload(path, file, {
+        cacheControl: "3600",
+        upsert: false,
+      });
+      if (error) {
+        console.error("[ImageUpload] upload error", { bucket, path, error });
+        toast.error("Upload thất bại: " + error.message);
+        return;
+      }
+      const { data: { publicUrl } } = supabase.storage.from(bucket).getPublicUrl(path);
+      onChange(publicUrl);
+      toast.success("Đã upload ảnh");
+    } catch (err) {
+      console.error("[ImageUpload] threw", err);
+      toast.error("Lỗi upload: " + (err instanceof Error ? err.message : "không xác định"));
+    } finally {
       setUploading(false);
-      toast.error("Upload thất bại: " + error.message);
-      return;
     }
-    const { data: { publicUrl } } = supabase.storage.from(bucket).getPublicUrl(path);
-    onChange(publicUrl);
-    setUploading(false);
-    toast.success("Đã upload ảnh");
   };
 
   const onPick = () => fileRef.current?.click();

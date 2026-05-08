@@ -38,32 +38,37 @@ export default function RegisterPage() {
       return;
     }
     setLoading(true);
-    const { data, error: err } = await supabase.auth.signUp({
-      email: form.email,
-      password: form.password,
-      options: {
-        data: { full_name: form.name, phone: form.phone },
-        emailRedirectTo: typeof window !== "undefined" ? `${window.location.origin}/account` : undefined,
-      },
-    });
-    if (err) {
-      setError(err.message);
-      setLoading(false);
-      toast.error("Đăng ký thất bại");
-      return;
-    }
-    if (data.user) {
-      await supabase.from("profiles").upsert({
-        id: data.user.id,
+    try {
+      const { data, error: err } = await supabase.auth.signUp({
         email: form.email,
-        full_name: form.name,
-        phone: form.phone,
-      }, { onConflict: "id" });
+        password: form.password,
+        options: {
+          data: { full_name: form.name, phone: form.phone },
+          emailRedirectTo: typeof window !== "undefined" ? `${window.location.origin}/account` : undefined,
+        },
+      });
+      if (err) {
+        setError(err.message);
+        toast.error("Đăng ký thất bại");
+        return;
+      }
+      if (data.user) {
+        await supabase.from("profiles").upsert({
+          id: data.user.id,
+          email: form.email,
+          full_name: form.name,
+          phone: form.phone,
+        }, { onConflict: "id" });
+      }
+      toast.success(`Chào mừng ${form.name}! Vui lòng kiểm tra email để xác minh.`);
+      router.push("/account");
+      router.refresh();
+    } catch (err) {
+      console.error("[register] threw", err);
+      setError("Lỗi: " + (err instanceof Error ? err.message : "không xác định"));
+    } finally {
+      setLoading(false);
     }
-    setLoading(false);
-    toast.success(`Chào mừng ${form.name}! Vui lòng kiểm tra email để xác minh.`);
-    router.push("/account");
-    router.refresh();
   };
 
   return (

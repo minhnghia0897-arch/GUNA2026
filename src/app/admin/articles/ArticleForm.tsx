@@ -59,29 +59,35 @@ export default function ArticleForm({ initial, isNew }: { initial?: ArticleFormV
       return;
     }
     setSaving(true);
-    const supabase = createClient();
-    const payload = {
-      slug: form.slug,
-      title: form.title,
-      excerpt: form.excerpt || null,
-      content: form.content || null,
-      category: form.category || null,
-      image: form.image || null,
-      read_time: form.read_time || null,
-      status: form.status,
-      published_at: form.published_at,
-    };
-    const { error } = isNew
-      ? await supabase.from("articles").insert(payload)
-      : await supabase.from("articles").update(payload).eq("id", form.id!);
-    setSaving(false);
-    if (error) {
-      toast.error("Lưu thất bại: " + error.message);
-      return;
+    try {
+      const supabase = createClient();
+      const payload = {
+        slug: form.slug,
+        title: form.title,
+        excerpt: form.excerpt || null,
+        content: form.content || null,
+        category: form.category || null,
+        image: form.image || null,
+        read_time: form.read_time || null,
+        status: form.status,
+        published_at: form.published_at,
+      };
+      const { error } = isNew
+        ? await supabase.from("articles").insert(payload)
+        : await supabase.from("articles").update(payload).eq("id", form.id!);
+      if (error) {
+        toast.error("Lưu thất bại: " + error.message);
+        return;
+      }
+      toast.success(isNew ? "Đã tạo bài viết" : "Đã cập nhật");
+      await revalidateStorefront("blog");
+      router.push("/admin/articles");
+    } catch (err) {
+      console.error("[ArticleForm] save threw", err);
+      toast.error("Lỗi: " + (err instanceof Error ? err.message : "không xác định"));
+    } finally {
+      setSaving(false);
     }
-    toast.success(isNew ? "Đã tạo bài viết" : "Đã cập nhật");
-    await revalidateStorefront("blog");
-    router.push("/admin/articles");
     router.refresh();
   };
 

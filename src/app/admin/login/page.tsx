@@ -14,36 +14,41 @@ export default function AdminLoginPage() {
     e.preventDefault();
     setError("");
     setLoading(true);
+    try {
+      const { data: signInData, error: signInErr } = await supabase.auth.signInWithPassword({
+        email: form.email.trim(),
+        password: form.password,
+      });
 
-    const { data: signInData, error: signInErr } = await supabase.auth.signInWithPassword({
-      email: form.email.trim(),
-      password: form.password,
-    });
+      if (signInErr || !signInData.user) {
+        setError(
+          signInErr?.message === "Invalid login credentials"
+            ? "Email hoặc mật khẩu không đúng"
+            : (signInErr?.message ?? "Đăng nhập thất bại")
+        );
+        return;
+      }
 
-    if (signInErr || !signInData.user) {
-      setLoading(false);
-      setError(
-        signInErr?.message === "Invalid login credentials"
-          ? "Email hoặc mật khẩu không đúng"
-          : (signInErr?.message ?? "Đăng nhập thất bại")
-      );
+      const { data: profile } = await supabase
+        .from("profiles")
+        .select("role")
+        .eq("id", signInData.user.id)
+        .maybeSingle();
+
+      if (!profile || (profile.role !== "admin" && profile.role !== "staff")) {
+        await supabase.auth.signOut({ scope: "local" });
+        setError("Tài khoản không có quyền quản trị. Vui lòng dùng tài khoản admin.");
+        return;
+      }
+
+      window.location.href = "/admin";
       return;
-    }
-
-    const { data: profile } = await supabase
-      .from("profiles")
-      .select("role")
-      .eq("id", signInData.user.id)
-      .maybeSingle();
-
-    if (!profile || (profile.role !== "admin" && profile.role !== "staff")) {
-      await supabase.auth.signOut({ scope: "local" });
+    } catch (err) {
+      console.error("[admin-login] threw", err);
+      setError("Lỗi: " + (err instanceof Error ? err.message : "không xác định"));
+    } finally {
       setLoading(false);
-      setError("Tài khoản không có quyền quản trị. Vui lòng dùng tài khoản admin.");
-      return;
     }
-
-    window.location.href = "/admin";
   };
 
   return (

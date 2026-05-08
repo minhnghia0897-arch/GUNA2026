@@ -94,6 +94,7 @@ export default function CheckoutPage() {
 
   const submitOrder = async () => {
     setSubmitting(true);
+    try {
     const supabase = createClient();
     const { data: { user } } = await supabase.auth.getUser();
 
@@ -103,7 +104,6 @@ export default function CheckoutPage() {
       .in("slug", items.map((i) => i.slug));
 
     if (stockErr || !stockRows) {
-      setSubmitting(false);
       toast.error("Không tải được sản phẩm, vui lòng thử lại");
       return;
     }
@@ -112,12 +112,10 @@ export default function CheckoutPage() {
     for (const cartItem of items) {
       const p = stockMap.get(cartItem.slug);
       if (!p || !p.is_visible) {
-        setSubmitting(false);
         toast.error(`"${cartItem.name}" không còn bán`);
         return;
       }
       if (p.stock_count < cartItem.quantity) {
-        setSubmitting(false);
         toast.error(`"${p.name}" chỉ còn ${p.stock_count} sản phẩm trong kho`);
         return;
       }
@@ -153,7 +151,6 @@ export default function CheckoutPage() {
       .single();
 
     if (orderErr || !created) {
-      setSubmitting(false);
       toast.error("Đặt hàng thất bại: " + (orderErr?.message ?? "Vui lòng thử lại"));
       return;
     }
@@ -175,7 +172,6 @@ export default function CheckoutPage() {
     const { error: itemsErr } = await supabase.from("order_items").insert(itemsPayload);
     if (itemsErr) {
       await supabase.from("orders").delete().eq("id", created.id);
-      setSubmitting(false);
       toast.error("Lưu sản phẩm thất bại, đã hủy đơn. Vui lòng thử lại.");
       console.error("order items error", itemsErr);
       return;
@@ -190,8 +186,13 @@ export default function CheckoutPage() {
     try { sessionStorage.removeItem("farmo-checkout-voucher"); } catch {}
     clear();
     setStep(3);
-    setSubmitting(false);
     toast.success(`Đơn hàng ${id} đã được tạo`);
+    } catch (err) {
+      console.error("[checkout] submitOrder threw", err);
+      toast.error("Lỗi đặt hàng: " + (err instanceof Error ? err.message : "không xác định"));
+    } finally {
+      setSubmitting(false);
+    }
   };
 
   if (items.length === 0 && step !== 3) {

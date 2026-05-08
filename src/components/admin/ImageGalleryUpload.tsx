@@ -48,33 +48,38 @@ export default function ImageGalleryUpload({
 
     setUploading(true);
     setProgress({ done: 0, total: arr.length });
-    const supabase = createClient();
     const uploaded: string[] = [];
-
-    for (let i = 0; i < arr.length; i++) {
-      const file = arr[i];
-      const dot = file.name.lastIndexOf(".");
-      const ext = dot >= 0 ? file.name.slice(dot + 1).toLowerCase() : "jpg";
-      const path = `${folder ? folder + "/" : ""}${Date.now()}-${i}-${Math.random().toString(36).slice(2, 6)}.${ext}`;
-      const { error } = await supabase.storage.from(bucket).upload(path, file, {
-        cacheControl: "3600",
-        upsert: false,
-      });
-      if (error) {
-        console.error("[ImageGalleryUpload] upload error", { bucket, path, error });
-        toast.error(`Upload thất bại "${file.name}": ${error.message}`);
-        continue;
+    try {
+      const supabase = createClient();
+      for (let i = 0; i < arr.length; i++) {
+        const file = arr[i];
+        const dot = file.name.lastIndexOf(".");
+        const ext = dot >= 0 ? file.name.slice(dot + 1).toLowerCase() : "jpg";
+        const path = `${folder ? folder + "/" : ""}${Date.now()}-${i}-${Math.random().toString(36).slice(2, 6)}.${ext}`;
+        const { error } = await supabase.storage.from(bucket).upload(path, file, {
+          cacheControl: "3600",
+          upsert: false,
+        });
+        if (error) {
+          console.error("[ImageGalleryUpload] upload error", { bucket, path, error });
+          toast.error(`Upload thất bại "${file.name}": ${error.message}`);
+          continue;
+        }
+        const { data: { publicUrl } } = supabase.storage.from(bucket).getPublicUrl(path);
+        uploaded.push(publicUrl);
+        setProgress({ done: i + 1, total: arr.length });
       }
-      const { data: { publicUrl } } = supabase.storage.from(bucket).getPublicUrl(path);
-      uploaded.push(publicUrl);
-      setProgress({ done: i + 1, total: arr.length });
-    }
 
-    if (uploaded.length > 0) {
-      onChange([...value, ...uploaded]);
-      toast.success(`Đã upload ${uploaded.length} ảnh`);
+      if (uploaded.length > 0) {
+        onChange([...value, ...uploaded]);
+        toast.success(`Đã upload ${uploaded.length} ảnh`);
+      }
+    } catch (err) {
+      console.error("[ImageGalleryUpload] threw", err);
+      toast.error("Lỗi upload: " + (err instanceof Error ? err.message : "không xác định"));
+    } finally {
+      setUploading(false);
     }
-    setUploading(false);
   };
 
   const onFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {

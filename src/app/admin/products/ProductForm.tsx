@@ -96,38 +96,44 @@ export default function ProductForm({
       return;
     }
     setSaving(true);
-    const supabase = createClient();
-    const gallery = form.gallery;
+    try {
+      const supabase = createClient();
+      const gallery = form.gallery;
 
-    const payload = {
-      slug: form.slug,
-      name: form.name,
-      short_desc: form.short_desc || null,
-      description: form.description || null,
-      category_slug: form.category_slug,
-      price: form.price,
-      original_price: form.original_price || null,
-      badge: form.badge || null,
-      image: gallery[0] || form.image || null,
-      gallery,
-      specs: form.specs.filter((s) => s.label && s.value),
-      stock_count: form.stock_count,
-      is_visible: form.is_visible,
-    };
+      const payload = {
+        slug: form.slug,
+        name: form.name,
+        short_desc: form.short_desc || null,
+        description: form.description || null,
+        category_slug: form.category_slug,
+        price: form.price,
+        original_price: form.original_price || null,
+        badge: form.badge || null,
+        image: gallery[0] || form.image || null,
+        gallery,
+        specs: form.specs.filter((s) => s.label && s.value),
+        stock_count: form.stock_count,
+        is_visible: form.is_visible,
+      };
 
-    const { error } = isNew
-      ? await supabase.from("products").insert(payload)
-      : await supabase.from("products").update(payload).eq("id", form.id!);
+      const { error } = isNew
+        ? await supabase.from("products").insert(payload)
+        : await supabase.from("products").update(payload).eq("id", form.id!);
 
-    setSaving(false);
-    if (error) {
-      toast.error("Lưu thất bại: " + error.message);
-      return;
+      if (error) {
+        toast.error("Lưu thất bại: " + error.message);
+        return;
+      }
+      toast.success(isNew ? "Đã tạo sản phẩm" : "Đã cập nhật");
+      await revalidateStorefront("products");
+      router.push("/admin/products");
+      router.refresh();
+    } catch (err) {
+      console.error("[ProductForm] save threw", err);
+      toast.error("Lỗi: " + (err instanceof Error ? err.message : "không xác định"));
+    } finally {
+      setSaving(false);
     }
-    toast.success(isNew ? "Đã tạo sản phẩm" : "Đã cập nhật");
-    await revalidateStorefront("products");
-    router.push("/admin/products");
-    router.refresh();
   };
 
   const handleDelete = async () => {

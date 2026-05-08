@@ -29,15 +29,26 @@ export default function CartPage() {
     if (!code) return;
     setApplying(true);
     setCouponError("");
-    const supabase = createClient();
-    const { data, error } = await supabase
-      .from("vouchers")
-      .select("code, discount_type, value, min_order, max_discount, ends_at, is_active")
-      .eq("code", code)
-      .maybeSingle();
-    setApplying(false);
+    type VoucherRow = { code: string; discount_type: AppliedVoucher["discount_type"]; value: number; min_order: number; max_discount: number | null; ends_at: string | null; is_active: boolean };
+    let data: VoucherRow | null = null;
+    let hasError = false;
+    try {
+      const supabase = createClient();
+      const res = await supabase
+        .from("vouchers")
+        .select("code, discount_type, value, min_order, max_discount, ends_at, is_active")
+        .eq("code", code)
+        .maybeSingle();
+      data = (res.data as VoucherRow | null) ?? null;
+      hasError = !!res.error;
+    } catch (err) {
+      console.error("[cart] applyCoupon threw", err);
+      hasError = true;
+    } finally {
+      setApplying(false);
+    }
 
-    if (error || !data) {
+    if (hasError || !data) {
       setCouponError("Mã giảm giá không tồn tại");
       setAppliedCoupon(null);
       toast.error("Mã giảm giá không tồn tại");

@@ -20,16 +20,22 @@ export default function ForgotPasswordPage() {
       return;
     }
     setSubmitting(true);
-    const { error } = await supabase.auth.resetPasswordForEmail(email, {
-      redirectTo: typeof window !== "undefined" ? `${window.location.origin}/account` : undefined,
-    });
-    setSubmitting(false);
-    if (error) {
-      toast.error(error.message);
-      return;
+    try {
+      const { error } = await supabase.auth.resetPasswordForEmail(email, {
+        redirectTo: typeof window !== "undefined" ? `${window.location.origin}/account` : undefined,
+      });
+      if (error) {
+        toast.error(error.message);
+        return;
+      }
+      setSent(true);
+      toast.success("Đã gửi email đặt lại mật khẩu");
+    } catch (err) {
+      console.error("[forgot-password] threw", err);
+      toast.error("Lỗi: " + (err instanceof Error ? err.message : "không xác định"));
+    } finally {
+      setSubmitting(false);
     }
-    setSent(true);
-    toast.success("Đã gửi email đặt lại mật khẩu");
   };
 
   return (

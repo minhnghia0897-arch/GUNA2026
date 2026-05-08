@@ -20,16 +20,22 @@ export default function GeneralSettingsForm({ initial }: { initial: DbSiteSettin
   const submit = async (e: React.FormEvent) => {
     e.preventDefault();
     setSaving(true);
-    const supabase = createClient();
-    const { error } = await supabase.from("site_settings").update(form).eq("id", "main");
-    setSaving(false);
-    if (error) {
-      toast.error("Lưu thất bại: " + error.message);
-      return;
+    try {
+      const supabase = createClient();
+      const { error } = await supabase.from("site_settings").update(form).eq("id", "main");
+      if (error) {
+        toast.error("Lưu thất bại: " + error.message);
+        return;
+      }
+      toast.success("Đã lưu thay đổi");
+      await revalidateStorefront("settings");
+      router.refresh();
+    } catch (err) {
+      console.error("[GeneralSettings] save threw", err);
+      toast.error("Lỗi: " + (err instanceof Error ? err.message : "không xác định"));
+    } finally {
+      setSaving(false);
     }
-    toast.success("Đã lưu thay đổi");
-    await revalidateStorefront("settings");
-    router.refresh();
   };
 
   return (

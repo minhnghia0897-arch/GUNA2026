@@ -108,31 +108,37 @@ export default function ReviewSection({ slug }: { slug: string }) {
     if (!authUser || !productId) return;
 
     setSubmitting(true);
-    const supabase = createClient();
-    const { data, error } = await supabase
-      .from("reviews")
-      .insert({
-        product_id: productId,
-        user_id: authUser.id,
-        author_name: authUser.name,
-        rating: form.rating,
-        title: form.title.trim() || null,
-        content: form.content.trim(),
-        is_verified: true,
-        status: "published",
-      })
-      .select("id,rating,title,content,author_name,is_verified,helpful_count,created_at")
-      .single();
-    setSubmitting(false);
+    try {
+      const supabase = createClient();
+      const { data, error } = await supabase
+        .from("reviews")
+        .insert({
+          product_id: productId,
+          user_id: authUser.id,
+          author_name: authUser.name,
+          rating: form.rating,
+          title: form.title.trim() || null,
+          content: form.content.trim(),
+          is_verified: true,
+          status: "published",
+        })
+        .select("id,rating,title,content,author_name,is_verified,helpful_count,created_at")
+        .single();
 
-    if (error || !data) {
-      toast.error("Gửi đánh giá thất bại: " + (error?.message ?? "lỗi không xác định"));
-      return;
+      if (error || !data) {
+        toast.error("Gửi đánh giá thất bại: " + (error?.message ?? "lỗi không xác định"));
+        return;
+      }
+      setDbReviews((cur) => [dbToReview(data as DbReview), ...cur]);
+      setForm({ rating: 5, title: "", content: "" });
+      setShowForm(false);
+      toast.success("Đánh giá của bạn đã được gửi. Cảm ơn bạn!");
+    } catch (err) {
+      console.error("[ReviewSection] submit threw", err);
+      toast.error("Lỗi: " + (err instanceof Error ? err.message : "không xác định"));
+    } finally {
+      setSubmitting(false);
     }
-    setDbReviews((cur) => [dbToReview(data as DbReview), ...cur]);
-    setForm({ rating: 5, title: "", content: "" });
-    setShowForm(false);
-    toast.success("Đánh giá của bạn đã được gửi. Cảm ơn bạn!");
   };
 
   const markHelpful = async (id: string) => {
