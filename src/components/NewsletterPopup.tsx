@@ -6,7 +6,6 @@ import { useToast } from "@/context/ToastContext";
 import { useFocusTrap } from "@/hooks/useFocusTrap";
 
 const STORAGE_KEY = "farmo-newsletter-popup";
-const COOKIE_KEY = "farmo-cookie-consent";
 const TRIGGER_DELAY_MS = 8000;
 const SCROLL_THRESHOLD = 0.5;
 const SKIP_PATHS = ["/checkout", "/cart"];
@@ -33,11 +32,6 @@ export default function NewsletterPopup() {
     let triggered = false;
     const trigger = () => {
       if (triggered) return;
-      let cookieDismissed = false;
-      try {
-        cookieDismissed = !!localStorage.getItem(COOKIE_KEY);
-      } catch {}
-      if (!cookieDismissed) return;
       triggered = true;
       setShow(true);
     };
@@ -47,16 +41,11 @@ export default function NewsletterPopup() {
       const scrolled = window.scrollY / Math.max(1, document.body.scrollHeight - window.innerHeight);
       if (scrolled >= SCROLL_THRESHOLD) trigger();
     };
-    const onCookieDismissed = () => {
-      setTimeout(trigger, 1500);
-    };
     window.addEventListener("scroll", onScroll, { passive: true });
-    window.addEventListener("cookie-consent-dismissed", onCookieDismissed);
 
     return () => {
       clearTimeout(timer);
       window.removeEventListener("scroll", onScroll);
-      window.removeEventListener("cookie-consent-dismissed", onCookieDismissed);
     };
   }, [skipOnPath]);
 

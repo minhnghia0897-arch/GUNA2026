@@ -9,7 +9,6 @@ import Footer from "@/components/Footer";
 import CartDrawer from "@/components/CartDrawer";
 import ToastContainer from "@/components/ToastContainer";
 import StickyContact from "@/components/StickyContact";
-import CookieConsent from "@/components/CookieConsent";
 import NewsletterPopup from "@/components/NewsletterPopup";
 import BackToTop from "@/components/BackToTop";
 import MobileBottomNav from "@/components/MobileBottomNav";
@@ -103,7 +102,6 @@ export default async function RootLayout({ children }: Readonly<{ children: Reac
                 <BackToTop />
                 <MobileBottomNav />
                 <SocialProof />
-                <CookieConsent />
                 <NewsletterPopup />
                 <ExitIntent />
               </WishlistProvider>

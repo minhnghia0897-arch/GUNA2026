@@ -6,7 +6,6 @@ import { useToast } from "@/context/ToastContext";
 import { useFocusTrap } from "@/hooks/useFocusTrap";
 
 const SESSION_KEY = "farmo-exit-intent-shown";
-const COOKIE_KEY = "farmo-cookie-consent";
 const NEWSLETTER_KEY = "farmo-newsletter-popup";
 const SKIP_PATHS = ["/checkout", "/cart"];
 const SKIP_PREFIXES = ["/account", "/admin"];
@@ -24,11 +23,9 @@ export default function ExitIntent() {
     if (skip) return;
 
     let alreadyShown = false;
-    let cookieDismissed = false;
     let newsletterDismissed = false;
     try {
       alreadyShown = !!sessionStorage.getItem(SESSION_KEY);
-      cookieDismissed = !!localStorage.getItem(COOKIE_KEY);
       newsletterDismissed = !!localStorage.getItem(NEWSLETTER_KEY);
     } catch {}
 
@@ -41,9 +38,6 @@ export default function ExitIntent() {
         if (sessionStorage.getItem(SESSION_KEY)) return;
       } catch {}
       try {
-        if (!localStorage.getItem(COOKIE_KEY)) return;
-      } catch {}
-      try {
         if (!localStorage.getItem(NEWSLETTER_KEY)) return;
       } catch {}
       try {
@@ -52,7 +46,7 @@ export default function ExitIntent() {
       setShow(true);
     };
 
-    if (cookieDismissed && newsletterDismissed) {
+    if (newsletterDismissed) {
       const timer = setTimeout(() => {
         document.addEventListener("mouseout", onMouseOut);
       }, 3000);

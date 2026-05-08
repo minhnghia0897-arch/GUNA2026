@@ -1,37 +1,15 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useState } from "react";
 import { usePathname } from "next/navigation";
 import { useSiteConfig } from "@/context/SiteConfigContext";
-
-const COOKIE_KEY = "farmo-cookie-consent";
 
 export default function StickyContact() {
   const pathname = usePathname();
   const settings = useSiteConfig();
   const [open, setOpen] = useState(false);
-  const [cookieDismissed, setCookieDismissed] = useState(false);
-
-  useEffect(() => {
-    const check = () => {
-      try {
-        setCookieDismissed(!!localStorage.getItem(COOKIE_KEY));
-      } catch {
-        setCookieDismissed(true);
-      }
-    };
-    check();
-    const onCustom = () => check();
-    window.addEventListener("storage", check);
-    window.addEventListener("cookie-consent-dismissed", onCustom);
-    return () => {
-      window.removeEventListener("storage", check);
-      window.removeEventListener("cookie-consent-dismissed", onCustom);
-    };
-  }, []);
 
   if (pathname.startsWith("/admin")) return null;
-  if (!cookieDismissed) return null;
 
   const phoneClean = (settings?.hotline ?? "0901234567").replace(/\s/g, "");
 
