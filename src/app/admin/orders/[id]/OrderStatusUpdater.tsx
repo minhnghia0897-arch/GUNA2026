@@ -30,18 +30,25 @@ export default function OrderStatusUpdater({
 
   const update = async () => {
     setSaving(true);
-    const supabase = createClient();
-    const { error } = await supabase
-      .from("orders")
-      .update({ status, tracking_number: tracking || null })
-      .eq("id", orderId);
-    setSaving(false);
-    if (error) {
-      toast.error("Cập nhật thất bại: " + error.message);
-      return;
+    try {
+      const supabase = createClient();
+      const { error } = await supabase
+        .from("orders")
+        .update({ status, tracking_number: tracking || null })
+        .eq("id", orderId);
+      if (error) {
+        console.error("[OrderStatusUpdater] update error", error);
+        toast.error("Cập nhật thất bại: " + error.message);
+        return;
+      }
+      toast.success("Đã cập nhật đơn hàng");
+      router.refresh();
+    } catch (err) {
+      console.error("[OrderStatusUpdater] threw", err);
+      toast.error("Lỗi khi cập nhật: " + (err instanceof Error ? err.message : "không xác định"));
+    } finally {
+      setSaving(false);
     }
-    toast.success("Đã cập nhật đơn hàng");
-    router.refresh();
   };
 
   const dirty = status !== currentStatus || (tracking || null) !== currentTracking;
