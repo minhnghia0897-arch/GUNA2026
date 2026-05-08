@@ -4,7 +4,7 @@ export type DbProduct = {
   name: string;
   short_desc: string | null;
   description: string | null;
-  category_slug: "qua-cuoi" | "mat-ong" | "qua-tang" | "combo";
+  category_slug: string;
   price: number;
   original_price: number | null;
   badge: string | null;

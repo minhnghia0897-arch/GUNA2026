@@ -1,7 +1,6 @@
 import type { Metadata } from "next";
 import { absUrl, buildOg, buildTwitter } from "@/lib/seo";
-import { fetchFaqs, groupFaqsByCategory } from "@/lib/supabase/cms";
-import { fetchSiteSettings } from "@/lib/supabase/cms";
+import { fetchFaqs, groupFaqsByCategory, fetchSiteSettingsStatic as fetchSiteSettings } from "@/lib/supabase/cms";
 import JsonLd from "@/components/JsonLd";
 import FaqClient from "./FaqClient";
 

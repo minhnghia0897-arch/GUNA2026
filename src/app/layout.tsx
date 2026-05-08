@@ -17,7 +17,7 @@ import SocialProof from "@/components/SocialProof";
 import ExitIntent from "@/components/ExitIntent";
 import JsonLd from "@/components/JsonLd";
 import { SITE, absUrl, buildOg, buildTwitter } from "@/lib/seo";
-import { fetchSiteSettings } from "@/lib/supabase/cms";
+import { fetchSiteSettingsStatic as fetchSiteSettings } from "@/lib/supabase/cms";
 
 const TITLE = `${SITE.fullName} - ${SITE.tagline}`;
 

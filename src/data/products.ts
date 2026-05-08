@@ -3,7 +3,7 @@ export type Product = {
   name: string;
   price: number;
   originalPrice?: number;
-  category: "qua-cuoi" | "mat-ong" | "qua-tang" | "combo";
+  category: string;
   categoryLabel: string;
   badge?: string | null;
   rating: number;

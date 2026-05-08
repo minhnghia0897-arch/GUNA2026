@@ -2,7 +2,7 @@ import { notFound } from "next/navigation";
 import type { Metadata } from "next";
 import Link from "next/link";
 import { absUrl, buildOg, buildTwitter } from "@/lib/seo";
-import { fetchPolicy, fetchSiteSettings } from "@/lib/supabase/cms";
+import { fetchPolicy, fetchSiteSettingsStatic as fetchSiteSettings } from "@/lib/supabase/cms";
 import { IconArrowRight, IconLeaf, IconShield, IconGem } from "@/components/icons";
 
 export const revalidate = 300;

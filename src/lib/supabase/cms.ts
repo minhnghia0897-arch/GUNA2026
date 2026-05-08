@@ -13,8 +13,7 @@ export async function fetchSiteSettings(): Promise<DbSiteSettings | null> {
     const supabase = await createServerClient();
     const { data } = await supabase.from("site_settings").select("*").eq("id", "main").maybeSingle();
     return (data as DbSiteSettings | null) ?? null;
-  } catch (err) {
-    console.error("[fetchSiteSettings] failed", err);
+  } catch {
     return null;
   }
 }
