@@ -13,8 +13,6 @@ export default function CartDrawer() {
   const { items, isOpen, closeCart, removeItem, setQuantity, subtotal, totalItems } = useCart();
   const trapRef = useFocusTrap<HTMLDivElement>(isOpen);
 
-  if (pathname.startsWith("/admin")) return null;
-
   useEffect(() => {
     if (isOpen) {
       document.body.style.overflow = "hidden";
@@ -33,6 +31,7 @@ export default function CartDrawer() {
     return () => window.removeEventListener("keydown", onKey);
   }, [isOpen, closeCart]);
 
+  if (pathname.startsWith("/admin")) return null;
   if (!isOpen) return null;
 
   const SHIPPING_THRESHOLD = 500000;

@@ -8,7 +8,6 @@ const SHOW_AFTER_PX = 400;
 export default function BackToTop() {
   const pathname = usePathname();
   const [show, setShow] = useState(false);
-  if (pathname.startsWith("/admin")) return null;
 
   useEffect(() => {
     const onScroll = () => {
@@ -18,6 +17,8 @@ export default function BackToTop() {
     window.addEventListener("scroll", onScroll, { passive: true });
     return () => window.removeEventListener("scroll", onScroll);
   }, []);
+
+  if (pathname.startsWith("/admin")) return null;
 
   const goTop = () => {
     window.scrollTo({ top: 0, behavior: "smooth" });
