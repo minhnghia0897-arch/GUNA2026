@@ -6,6 +6,7 @@ export async function POST(request: Request) {
   await supabase.auth.signOut();
 
   const url = new URL(request.url);
-  const redirectTo = url.searchParams.get("redirect") || "/";
+  const raw = url.searchParams.get("redirect");
+  const redirectTo = raw && raw.startsWith("/") && !raw.startsWith("//") ? raw : "/";
   return NextResponse.redirect(new URL(redirectTo, url.origin), { status: 303 });
 }

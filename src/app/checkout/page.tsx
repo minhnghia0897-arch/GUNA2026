@@ -48,6 +48,40 @@ export default function CheckoutPage() {
     address: "",
     note: "",
   });
+
+  useEffect(() => {
+    let cancelled = false;
+    const prefill = async () => {
+      const supabase = createClient();
+      const { data: { user } } = await supabase.auth.getUser();
+      if (cancelled || !user) return;
+      const [{ data: profile }, { data: addr }] = await Promise.all([
+        supabase.from("profiles").select("full_name, phone, email").eq("id", user.id).maybeSingle(),
+        supabase
+          .from("addresses")
+          .select("full_name, phone, province_code, district_code, ward_code, line")
+          .eq("user_id", user.id)
+          .eq("is_default", true)
+          .maybeSingle(),
+      ]);
+      if (cancelled) return;
+      setForm((f) => {
+        if (f.fullName || f.phone || f.address) return f;
+        return {
+          ...f,
+          fullName: addr?.full_name ?? profile?.full_name ?? "",
+          phone: addr?.phone ?? profile?.phone ?? "",
+          email: profile?.email ?? user.email ?? "",
+          provinceCode: addr?.province_code ?? "",
+          districtCode: addr?.district_code ?? "",
+          wardCode: addr?.ward_code ?? "",
+          address: addr?.line ?? "",
+        };
+      });
+    };
+    prefill();
+    return () => { cancelled = true; };
+  }, []);
   const [shipping, setShipping] = useState<ShippingMethod>("standard");
   const [payment, setPayment] = useState<PaymentMethod>("cod");
 
@@ -160,16 +194,28 @@ export default function CheckoutPage() {
     });
 
     if (rpcErr || !rpcData) {
-      toast.error("Đặt hàng thất bại: " + (rpcErr?.message ?? "Vui lòng thử lại"));
+      const raw = rpcErr?.message ?? "";
+      let friendly = "Đặt hàng thất bại, vui lòng thử lại";
+      if (raw.includes("INSUFFICIENT_STOCK")) {
+        friendly = "Sản phẩm vừa hết hàng, vui lòng kiểm tra lại giỏ hàng";
+      } else if (raw.includes("VOUCHER_EXPIRED")) {
+        friendly = "Voucher đã hết hạn";
+      } else if (raw.includes("VOUCHER_USAGE_LIMIT")) {
+        friendly = "Voucher đã hết lượt dùng";
+      } else if (raw.includes("VOUCHER_MIN_ORDER_NOT_MET")) {
+        friendly = "Đơn hàng chưa đủ giá trị tối thiểu để dùng voucher";
+      } else if (raw.includes("VOUCHER_NOT_STARTED")) {
+        friendly = "Voucher chưa đến ngày áp dụng";
+      } else if (raw.includes("INVALID_VOUCHER")) {
+        friendly = "Voucher không hợp lệ";
+      }
+      toast.error(friendly);
       console.error("[checkout] create_order RPC error", rpcErr);
       return;
     }
 
     const created = rpcData as { id: string; order_code: string };
-
-    if (voucher?.code) {
-      await supabase.rpc("increment_voucher_used", { voucher_code: voucher.code });
-    }
+    // Voucher used_count is incremented atomically inside create_order — no separate call needed
 
     const id = created.order_code;
     setOrderId(id);

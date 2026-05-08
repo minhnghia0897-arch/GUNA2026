@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import Link from "next/link";
 import Image from "next/image";
 import { notFound } from "next/navigation";
+import sanitizeHtml from "sanitize-html";
 import { absUrl, buildOg, buildTwitter } from "@/lib/seo";
 import { createClient } from "@/lib/supabase/server";
 import type { DbArticle } from "@/lib/supabase/types";
@@ -87,7 +88,11 @@ export default async function BlogPostPage({ params }: { params: Promise<{ slug:
 
         <div className="prose prose-sm max-w-none text-gray-600 font-light leading-relaxed text-base space-y-4">
           {article.content ? (
-            <div dangerouslySetInnerHTML={{ __html: article.content }} />
+            <div dangerouslySetInnerHTML={{ __html: sanitizeHtml(article.content, {
+              allowedTags: sanitizeHtml.defaults.allowedTags.concat(["img", "h1", "h2"]),
+              allowedAttributes: { ...sanitizeHtml.defaults.allowedAttributes, img: ["src", "alt", "title", "width", "height"] },
+              allowedSchemes: ["http", "https", "mailto"],
+            }) }} />
           ) : (
             <>
               <p>{article.excerpt}</p>

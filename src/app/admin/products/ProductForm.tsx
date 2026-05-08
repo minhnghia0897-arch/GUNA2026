@@ -138,8 +138,35 @@ export default function ProductForm({
 
   const handleDelete = async () => {
     if (!form.id) return;
-    if (!confirm("Xóa sản phẩm này? Hành động không thể hoàn tác.")) return;
     const supabase = createClient();
+
+    const { count: orderCount, error: countErr } = await supabase
+      .from("order_items")
+      .select("id", { count: "exact", head: true })
+      .eq("product_id", form.id);
+
+    if (countErr) {
+      toast.error("Không kiểm tra được liên kết đơn hàng: " + countErr.message);
+      return;
+    }
+
+    if ((orderCount ?? 0) > 0) {
+      const ok = confirm(
+        `Sản phẩm này đã có trong ${orderCount} đơn hàng. Để giữ lịch sử đơn, hệ thống sẽ ẨN sản phẩm (is_visible=false) thay vì xóa cứng. Tiếp tục?`
+      );
+      if (!ok) return;
+      const { error: hideErr } = await supabase.from("products").update({ is_visible: false }).eq("id", form.id);
+      if (hideErr) {
+        toast.error("Ẩn sản phẩm thất bại: " + hideErr.message);
+        return;
+      }
+      toast.success("Đã ẩn sản phẩm khỏi storefront");
+      router.push("/admin/products");
+      router.refresh();
+      return;
+    }
+
+    if (!confirm("Xóa vĩnh viễn sản phẩm này? Hành động không thể hoàn tác.")) return;
     const { error } = await supabase.from("products").delete().eq("id", form.id);
     if (error) {
       toast.error("Xóa thất bại: " + error.message);

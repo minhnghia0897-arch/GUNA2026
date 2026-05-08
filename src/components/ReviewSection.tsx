@@ -8,6 +8,20 @@ import { getReviews, type Review } from "@/data/reviews";
 import { StarDisplay, StarInput } from "./StarRating";
 
 const HELPFUL_KEY = "farmo-review-helpful";
+const SESSION_KEY = "farmo-anon-session-key";
+
+const getSessionKey = (): string => {
+  try {
+    let key = localStorage.getItem(SESSION_KEY);
+    if (!key) {
+      key = (crypto.randomUUID?.() ?? `${Date.now()}-${Math.random().toString(36).slice(2)}`).replace(/-/g, "");
+      localStorage.setItem(SESSION_KEY, key);
+    }
+    return key;
+  } catch {
+    return `${Date.now()}-${Math.random().toString(36).slice(2)}`;
+  }
+};
 
 type DbReview = {
   id: string;
@@ -38,6 +52,7 @@ export default function ReviewSection({ slug }: { slug: string }) {
   const [helpfulIds, setHelpfulIds] = useState<Set<string>>(new Set());
   const [showForm, setShowForm] = useState(false);
   const [authUser, setAuthUser] = useState<{ id: string; name: string } | null>(null);
+  const [canReview, setCanReview] = useState(false);
   const [submitting, setSubmitting] = useState(false);
 
   const [form, setForm] = useState<{ rating: number; title: string; content: string }>({
@@ -70,6 +85,16 @@ export default function ReviewSection({ slug }: { slug: string }) {
           id: user.id,
           name: (profile?.full_name as string) || (profile?.email as string) || "Khách hàng",
         });
+
+        const { data: purchased } = await supabase
+          .from("order_items")
+          .select("id, orders!inner(user_id, status)")
+          .eq("product_id", prod.id)
+          .eq("orders.user_id", user.id)
+          .eq("orders.status", "delivered")
+          .limit(1);
+        if (cancelled) return;
+        setCanReview((purchased ?? []).length > 0);
       }
 
       try {
@@ -105,7 +130,7 @@ export default function ReviewSection({ slug }: { slug: string }) {
       toast.error("Vui lòng viết nội dung đánh giá");
       return;
     }
-    if (!authUser || !productId) return;
+    if (!authUser || !productId || !canReview) return;
 
     setSubmitting(true);
     try {
@@ -153,7 +178,10 @@ export default function ReviewSection({ slug }: { slug: string }) {
     const isDb = dbReviews.some((r) => r.id === id);
     if (isDb) {
       const supabase = createClient();
-      const { data, error } = await supabase.rpc("increment_review_helpful", { review_id: id });
+      const { data, error } = await supabase.rpc("increment_review_helpful", {
+        review_id: id,
+        p_session_key: authUser ? null : getSessionKey(),
+      });
       if (!error && typeof data === "number") {
         setDbReviews((cur) => cur.map((r) => (r.id === id ? { ...r, helpful: data } : r)));
       }
@@ -191,18 +219,22 @@ export default function ReviewSection({ slug }: { slug: string }) {
         <h3 className="font-serif text-xl text-burgundy">
           {allReviews.length > 0 ? `${allReviews.length} đánh giá` : "Chưa có đánh giá nào"}
         </h3>
-        {authUser ? (
+        {!authUser ? (
+          <Link href="/account/login" className="text-sm text-burgundy hover:text-gold underline">
+            Đăng nhập để viết đánh giá
+          </Link>
+        ) : canReview ? (
           <button onClick={() => setShowForm(!showForm)} className="btn-gold text-sm">
             {showForm ? "Đóng" : "Viết đánh giá"}
           </button>
         ) : (
-          <Link href="/account/login" className="text-sm text-burgundy hover:text-gold underline">
-            Đăng nhập để viết đánh giá
-          </Link>
+          <span className="text-xs text-gray-500 italic">
+            Chỉ khách đã mua sản phẩm này mới có thể đánh giá
+          </span>
         )}
       </div>
 
-      {showForm && authUser && (
+      {showForm && authUser && canReview && (
         <form onSubmit={submit} className="bg-white border border-gold/20 rounded-xl p-6 mb-6 space-y-4">
           <div>
             <label className="text-sm font-medium text-gray-700 mb-2 block">Đánh giá của bạn *</label>
