@@ -122,61 +122,50 @@ export default function CheckoutPage() {
       }
     }
 
-    const { data: created, error: orderErr } = await supabase
-      .from("orders")
-      .insert({
-        user_id: user?.id ?? null,
-        customer_name: form.fullName,
-        customer_phone: form.phone,
-        customer_email: form.email || null,
-        shipping_address: {
-          line: form.address,
-          ward_code: form.wardCode,
-          ward_name: wardName,
-          district_code: form.districtCode,
-          district_name: districtName,
-          province_code: form.provinceCode,
-          province_name: provinceName,
-          note: form.note || null,
-        },
-        shipping_method: shipping,
-        shipping_fee: shippingFee,
-        payment_method: payment,
-        subtotal,
-        discount: recomputedDiscount,
-        voucher_code: voucher?.code ?? null,
-        total,
-        note: form.note || null,
-      })
-      .select("id, order_code")
-      .single();
-
-    if (orderErr || !created) {
-      toast.error("Đặt hàng thất bại: " + (orderErr?.message ?? "Vui lòng thử lại"));
-      return;
-    }
-
     const itemsPayload = items.map((i) => {
       const p = stockMap.get(i.slug);
       return {
-        order_id: created.id,
         product_id: p?.id ?? null,
         product_slug: i.slug,
         product_name: i.name,
         product_image: i.image,
         unit_price: i.price,
         quantity: i.quantity,
-        total_price: i.price * i.quantity,
       };
     });
 
-    const { error: itemsErr } = await supabase.from("order_items").insert(itemsPayload);
-    if (itemsErr) {
-      await supabase.from("orders").delete().eq("id", created.id);
-      toast.error("Lưu sản phẩm thất bại, đã hủy đơn. Vui lòng thử lại.");
-      console.error("order items error", itemsErr);
+    const { data: rpcData, error: rpcErr } = await supabase.rpc("create_order", {
+      p_customer_name: form.fullName,
+      p_customer_phone: form.phone,
+      p_customer_email: form.email || null,
+      p_shipping_address: {
+        line: form.address,
+        ward_code: form.wardCode,
+        ward_name: wardName,
+        district_code: form.districtCode,
+        district_name: districtName,
+        province_code: form.provinceCode,
+        province_name: provinceName,
+        note: form.note || null,
+      },
+      p_shipping_method: shipping,
+      p_shipping_fee: shippingFee,
+      p_payment_method: payment,
+      p_subtotal: subtotal,
+      p_discount: recomputedDiscount,
+      p_voucher_code: voucher?.code ?? null,
+      p_total: total,
+      p_note: form.note || null,
+      p_items: itemsPayload,
+    });
+
+    if (rpcErr || !rpcData) {
+      toast.error("Đặt hàng thất bại: " + (rpcErr?.message ?? "Vui lòng thử lại"));
+      console.error("[checkout] create_order RPC error", rpcErr);
       return;
     }
+
+    const created = rpcData as { id: string; order_code: string };
 
     if (voucher?.code) {
       await supabase.rpc("increment_voucher_used", { voucher_code: voucher.code });
