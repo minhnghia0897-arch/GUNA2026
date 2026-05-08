@@ -9,9 +9,14 @@ import type {
 } from "./cms-types";
 
 export async function fetchSiteSettings(): Promise<DbSiteSettings | null> {
-  const supabase = await createServerClient();
-  const { data } = await supabase.from("site_settings").select("*").eq("id", "main").maybeSingle();
-  return (data as DbSiteSettings | null) ?? null;
+  try {
+    const supabase = await createServerClient();
+    const { data } = await supabase.from("site_settings").select("*").eq("id", "main").maybeSingle();
+    return (data as DbSiteSettings | null) ?? null;
+  } catch (err) {
+    console.error("[fetchSiteSettings] failed", err);
+    return null;
+  }
 }
 
 export async function fetchActiveBanners(type?: DbBanner["type"]): Promise<DbBanner[]> {
