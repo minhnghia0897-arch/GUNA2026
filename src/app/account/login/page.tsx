@@ -32,7 +32,9 @@ function LoginForm() {
       return;
     }
     toast.success("Đăng nhập thành công");
-    router.push(params.get("redirect") || "/account");
+    const redirect = params.get("redirect");
+    const safeRedirect = redirect && redirect.startsWith("/") && !redirect.startsWith("//") ? redirect : "/account";
+    router.push(safeRedirect);
     router.refresh();
   };
 

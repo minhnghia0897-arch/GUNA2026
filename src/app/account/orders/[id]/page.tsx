@@ -58,12 +58,14 @@ export default function OrderDetailPage({ params }: { params: Promise<{ id: stri
   const [items, setItems] = useState<DbOrderItem[]>([]);
 
   useEffect(() => {
+    let cancelled = false;
     const load = async () => {
       const { data: o } = await supabase
         .from("orders")
         .select("*")
         .eq("order_code", id)
         .maybeSingle();
+      if (cancelled) return;
       if (!o) {
         setOrder(null);
         return;
@@ -74,10 +76,13 @@ export default function OrderDetailPage({ params }: { params: Promise<{ id: stri
         .from("order_items")
         .select("*")
         .eq("order_id", ord.id);
+      if (cancelled) return;
       setItems((its as DbOrderItem[]) ?? []);
     };
     load();
-  }, [id, supabase]);
+    return () => { cancelled = true; };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [id]);
 
   const handleCancel = async () => {
     if (!order) return;
