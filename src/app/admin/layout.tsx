@@ -19,16 +19,23 @@ export default async function AdminLayout({ children }: { children: React.ReactN
   }
 
   const supabase = await createClient();
-  const { data: { user } } = await supabase.auth.getUser();
-  if (!user) redirect("/admin/login");
+  const { data: { user }, error: userErr } = await supabase.auth.getUser();
+  console.log("[admin-layout] pathname=%s user=%s err=%s", pathname, user?.id ?? "null", userErr?.message ?? "");
+  if (!user) {
+    console.log("[admin-layout] no user → redirect /admin/login");
+    redirect("/admin/login");
+  }
 
-  const { data: profile } = await supabase
+  const { data: profile, error: profileErr } = await supabase
     .from("profiles")
     .select("role, full_name, email")
     .eq("id", user.id)
     .maybeSingle();
 
+  console.log("[admin-layout] profile.role=%s err=%s", profile?.role ?? "null", profileErr?.message ?? "");
+
   if (!profile || (profile.role !== "admin" && profile.role !== "staff")) {
+    console.log("[admin-layout] not admin → redirect /?error=unauthorized");
     redirect("/?error=unauthorized");
   }
 
