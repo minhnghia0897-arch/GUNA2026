@@ -36,10 +36,7 @@ export default function OrderStatusUpdater({
 
   const onSave = () => {
     startTransition(async () => {
-      console.log("[OSU] gọi server action updateOrderStatus", { orderId, status, tracking });
-      const t0 = Date.now();
       const res = await updateOrderStatus(orderId, status, tracking);
-      console.log(`[OSU] server action trả về sau ${Date.now() - t0}ms`, res);
       if (res.ok) {
         toast.success("Đã cập nhật đơn hàng");
       } else {

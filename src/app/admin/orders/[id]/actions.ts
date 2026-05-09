@@ -12,7 +12,6 @@ export async function updateOrderStatus(
   status: string,
   tracking: string
 ): Promise<UpdateOrderResult> {
-  console.log("[server:updateOrderStatus] start", { orderId, status, tracking });
   const supabase = await createClient();
 
   const { data: { user } } = await supabase.auth.getUser();
@@ -29,12 +28,10 @@ export async function updateOrderStatus(
     return { ok: false, error: "Tài khoản không có quyền quản trị" };
   }
 
-  const t0 = Date.now();
   const { error, count } = await supabase
     .from("orders")
     .update({ status, tracking_number: tracking || null }, { count: "exact" })
     .eq("id", orderId);
-  console.log(`[server:updateOrderStatus] UPDATE done ${Date.now() - t0}ms`, { error, count });
 
   if (error) {
     const raw = error.message ?? "";

@@ -1,10 +1,9 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useTransition } from "react";
 import { useRouter } from "next/navigation";
-import { createClient } from "@/lib/supabase/client";
 import { useToast } from "@/context/ToastContext";
-import { revalidateStorefront } from "@/app/actions";
+import { createProduct, updateProduct, deleteProduct, checkProductOrderDependency } from "./actions";
 import ImageGalleryUpload from "@/components/admin/ImageGalleryUpload";
 
 type Spec = { label: string; value: string };
@@ -66,7 +65,7 @@ export default function ProductForm({
   const router = useRouter();
   const toast = useToast();
   const [form, setForm] = useState<ProductFormValues>(initial ?? EMPTY);
-  const [saving, setSaving] = useState(false);
+  const [pending, startTransition] = useTransition();
 
   const update = <K extends keyof ProductFormValues>(k: K, v: ProductFormValues[K]) =>
     setForm((f) => ({ ...f, [k]: v }));
@@ -85,7 +84,7 @@ export default function ProductForm({
   const removeSpec = (i: number) =>
     setForm((f) => ({ ...f, specs: f.specs.filter((_, idx) => idx !== i) }));
 
-  const submit = async (e: React.FormEvent) => {
+  const submit = (e: React.FormEvent) => {
     e.preventDefault();
     if (!form.slug.trim()) {
       toast.error("Vui lòng nhập slug");
@@ -95,86 +94,63 @@ export default function ProductForm({
       toast.error("Giá phải > 0");
       return;
     }
-    setSaving(true);
-    try {
-      const supabase = createClient();
-      const gallery = form.gallery;
+    const gallery = form.gallery;
+    const payload = {
+      slug: form.slug,
+      name: form.name,
+      short_desc: form.short_desc || null,
+      description: form.description || null,
+      category_slug: form.category_slug,
+      price: form.price,
+      original_price: form.original_price || null,
+      badge: form.badge || null,
+      image: gallery[0] || form.image || null,
+      gallery,
+      specs: form.specs.filter((s) => s.label && s.value),
+      stock_count: form.stock_count,
+      is_visible: form.is_visible,
+    };
 
-      const payload = {
-        slug: form.slug,
-        name: form.name,
-        short_desc: form.short_desc || null,
-        description: form.description || null,
-        category_slug: form.category_slug,
-        price: form.price,
-        original_price: form.original_price || null,
-        badge: form.badge || null,
-        image: gallery[0] || form.image || null,
-        gallery,
-        specs: form.specs.filter((s) => s.label && s.value),
-        stock_count: form.stock_count,
-        is_visible: form.is_visible,
-      };
-
-      const { error } = isNew
-        ? await supabase.from("products").insert(payload)
-        : await supabase.from("products").update(payload).eq("id", form.id!);
-
-      if (error) {
-        toast.error("Lưu thất bại: " + error.message);
+    startTransition(async () => {
+      const res = isNew ? await createProduct(payload) : await updateProduct(form.id!, payload);
+      if (!res.ok) {
+        toast.error(res.error);
         return;
       }
       toast.success(isNew ? "Đã tạo sản phẩm" : "Đã cập nhật");
-      await revalidateStorefront("products");
       router.push("/admin/products");
       router.refresh();
-    } catch (err) {
-      console.error("[ProductForm] save threw", err);
-      toast.error("Lỗi: " + (err instanceof Error ? err.message : "không xác định"));
-    } finally {
-      setSaving(false);
-    }
+    });
   };
 
   const handleDelete = async () => {
     if (!form.id) return;
-    const supabase = createClient();
 
-    const { count: orderCount, error: countErr } = await supabase
-      .from("order_items")
-      .select("id", { count: "exact", head: true })
-      .eq("product_id", form.id);
-
-    if (countErr) {
-      toast.error("Không kiểm tra được liên kết đơn hàng: " + countErr.message);
+    const dep = await checkProductOrderDependency(form.id);
+    if (dep.error) {
+      toast.error("Không kiểm tra được liên kết đơn hàng: " + dep.error);
       return;
     }
 
-    if ((orderCount ?? 0) > 0) {
+    if (dep.count > 0) {
       const ok = confirm(
-        `Sản phẩm này đã có trong ${orderCount} đơn hàng. Để giữ lịch sử đơn, hệ thống sẽ ẨN sản phẩm (is_visible=false) thay vì xóa cứng. Tiếp tục?`
+        `Sản phẩm này đã có trong ${dep.count} đơn hàng. Để giữ lịch sử đơn, hệ thống sẽ ẨN sản phẩm (is_visible=false) thay vì xóa cứng. Tiếp tục?`
       );
       if (!ok) return;
-      const { error: hideErr } = await supabase.from("products").update({ is_visible: false }).eq("id", form.id);
-      if (hideErr) {
-        toast.error("Ẩn sản phẩm thất bại: " + hideErr.message);
-        return;
-      }
-      toast.success("Đã ẩn sản phẩm khỏi storefront");
-      router.push("/admin/products");
-      router.refresh();
-      return;
+    } else {
+      if (!confirm("Xóa vĩnh viễn sản phẩm này? Hành động không thể hoàn tác.")) return;
     }
 
-    if (!confirm("Xóa vĩnh viễn sản phẩm này? Hành động không thể hoàn tác.")) return;
-    const { error } = await supabase.from("products").delete().eq("id", form.id);
-    if (error) {
-      toast.error("Xóa thất bại: " + error.message);
-      return;
-    }
-    toast.success("Đã xóa sản phẩm");
-    router.push("/admin/products");
-    router.refresh();
+    startTransition(async () => {
+      const res = await deleteProduct(form.id!);
+      if (!res.ok) {
+        toast.error(res.error);
+        return;
+      }
+      toast.success(res.mode === "soft" ? "Đã ẩn sản phẩm khỏi storefront" : "Đã xóa sản phẩm");
+      router.push("/admin/products");
+      router.refresh();
+    });
   };
 
   return (
@@ -335,8 +311,8 @@ export default function ProductForm({
       </div>
 
       <div className="flex gap-3 sticky bottom-0 bg-white py-4 border-t border-gold/10 px-1">
-        <button type="submit" disabled={saving} className="btn-gold">
-          {saving ? "Đang lưu..." : isNew ? "Tạo sản phẩm" : "Cập nhật"}
+        <button type="submit" disabled={pending} className="btn-gold">
+          {pending ? "Đang lưu..." : isNew ? "Tạo sản phẩm" : "Cập nhật"}
         </button>
         {!isNew && (
           <button type="button" onClick={handleDelete} className="text-red-600 text-sm px-4 hover:underline">
