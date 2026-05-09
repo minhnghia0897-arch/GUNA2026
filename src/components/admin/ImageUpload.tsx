@@ -1,9 +1,9 @@
 "use client";
 
-import { useState, useRef } from "react";
+import { useState, useRef, useTransition } from "react";
 import Image from "next/image";
-import { createClient } from "@/lib/supabase/client";
 import { useToast } from "@/context/ToastContext";
+import { uploadImageAction } from "@/app/admin/upload-actions";
 
 const MAX_FILE_BYTES = 5 * 1024 * 1024;
 
@@ -25,38 +25,27 @@ export default function ImageUpload({
   aspectRatio?: "square" | "video" | "auto";
 }) {
   const toast = useToast();
-  const [uploading, setUploading] = useState(false);
+  const [pending, startTransition] = useTransition();
   const fileRef = useRef<HTMLInputElement>(null);
 
-  const handleFile = async (file: File) => {
+  const handleFile = (file: File) => {
     if (file.size > MAX_FILE_BYTES) {
       toast.error("Kích thước file tối đa 5MB");
       return;
     }
-    setUploading(true);
-    try {
-      const supabase = createClient();
-      const dot = file.name.lastIndexOf(".");
-      const ext = dot >= 0 ? file.name.slice(dot + 1).toLowerCase() : "jpg";
-      const path = `${folder ? folder + "/" : ""}${Date.now()}-${Math.random().toString(36).slice(2, 8)}.${ext}`;
-      const { error } = await supabase.storage.from(bucket).upload(path, file, {
-        cacheControl: "3600",
-        upsert: false,
-      });
-      if (error) {
-        console.error("[ImageUpload] upload error", { bucket, path, error });
-        toast.error("Upload thất bại: " + error.message);
+    const formData = new FormData();
+    formData.set("file", file);
+    formData.set("bucket", bucket);
+    formData.set("folder", folder);
+    startTransition(async () => {
+      const res = await uploadImageAction(formData);
+      if (!res.ok) {
+        toast.error(res.error);
         return;
       }
-      const { data: { publicUrl } } = supabase.storage.from(bucket).getPublicUrl(path);
-      onChange(publicUrl);
+      onChange(res.url);
       toast.success("Đã upload ảnh");
-    } catch (err) {
-      console.error("[ImageUpload] threw", err);
-      toast.error("Lỗi upload: " + (err instanceof Error ? err.message : "không xác định"));
-    } finally {
-      setUploading(false);
-    }
+    });
   };
 
   const onPick = () => fileRef.current?.click();
@@ -82,10 +71,10 @@ export default function ImageUpload({
           <button
             type="button"
             onClick={onPick}
-            disabled={uploading}
+            disabled={pending}
             className={`w-32 ${aspectClass} rounded-lg border-2 border-dashed border-gold/30 hover:border-gold bg-cream/50 hover:bg-cream flex flex-col items-center justify-center text-burgundy text-xs gap-1 disabled:opacity-50 flex-shrink-0`}
           >
-            {uploading ? (
+            {pending ? (
               <>
                 <div className="animate-spin w-5 h-5 border-2 border-gold border-t-transparent rounded-full" />
                 <span>Đang upload...</span>
@@ -106,10 +95,10 @@ export default function ImageUpload({
               <button
                 type="button"
                 onClick={onPick}
-                disabled={uploading}
+                disabled={pending}
                 className="text-xs px-3 py-1.5 border border-gold text-burgundy rounded hover:bg-cream disabled:opacity-50"
               >
-                {uploading ? "Đang upload..." : "Đổi ảnh"}
+                {pending ? "Đang upload..." : "Đổi ảnh"}
               </button>
               <button
                 type="button"

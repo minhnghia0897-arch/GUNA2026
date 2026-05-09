@@ -1,9 +1,9 @@
 "use client";
 
-import { useRef, useState } from "react";
+import { useRef, useState, useTransition } from "react";
 import Image from "next/image";
-import { createClient } from "@/lib/supabase/client";
 import { useToast } from "@/context/ToastContext";
+import { uploadImageAction } from "@/app/admin/upload-actions";
 
 const MAX_FILE_BYTES = 5 * 1024 * 1024;
 
@@ -25,11 +25,11 @@ export default function ImageGalleryUpload({
   max?: number;
 }) {
   const toast = useToast();
-  const [uploading, setUploading] = useState(false);
   const [progress, setProgress] = useState({ done: 0, total: 0 });
+  const [pending, startTransition] = useTransition();
   const fileRef = useRef<HTMLInputElement>(null);
 
-  const uploadFiles = async (files: FileList) => {
+  const uploadFiles = (files: FileList) => {
     const all = Array.from(files);
     const remaining = max - value.length;
     if (all.length > remaining) {
@@ -46,40 +46,28 @@ export default function ImageGalleryUpload({
     }
     if (arr.length === 0) return;
 
-    setUploading(true);
     setProgress({ done: 0, total: arr.length });
-    const uploaded: string[] = [];
-    try {
-      const supabase = createClient();
+    startTransition(async () => {
+      const uploaded: string[] = [];
       for (let i = 0; i < arr.length; i++) {
         const file = arr[i];
-        const dot = file.name.lastIndexOf(".");
-        const ext = dot >= 0 ? file.name.slice(dot + 1).toLowerCase() : "jpg";
-        const path = `${folder ? folder + "/" : ""}${Date.now()}-${i}-${Math.random().toString(36).slice(2, 6)}.${ext}`;
-        const { error } = await supabase.storage.from(bucket).upload(path, file, {
-          cacheControl: "3600",
-          upsert: false,
-        });
-        if (error) {
-          console.error("[ImageGalleryUpload] upload error", { bucket, path, error });
-          toast.error(`Upload thất bại "${file.name}": ${error.message}`);
-          continue;
+        const formData = new FormData();
+        formData.set("file", file);
+        formData.set("bucket", bucket);
+        formData.set("folder", folder);
+        const res = await uploadImageAction(formData);
+        if (!res.ok) {
+          toast.error(`Upload thất bại "${file.name}": ${res.error}`);
+        } else {
+          uploaded.push(res.url);
         }
-        const { data: { publicUrl } } = supabase.storage.from(bucket).getPublicUrl(path);
-        uploaded.push(publicUrl);
         setProgress({ done: i + 1, total: arr.length });
       }
-
       if (uploaded.length > 0) {
         onChange([...value, ...uploaded]);
         toast.success(`Đã upload ${uploaded.length} ảnh`);
       }
-    } catch (err) {
-      console.error("[ImageGalleryUpload] threw", err);
-      toast.error("Lỗi upload: " + (err instanceof Error ? err.message : "không xác định"));
-    } finally {
-      setUploading(false);
-    }
+    });
   };
 
   const onFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -152,10 +140,10 @@ export default function ImageGalleryUpload({
           <button
             type="button"
             onClick={() => fileRef.current?.click()}
-            disabled={uploading}
+            disabled={pending}
             className="aspect-square rounded-lg border-2 border-dashed border-gold/30 hover:border-gold bg-cream/50 hover:bg-cream flex flex-col items-center justify-center text-burgundy text-xs gap-1 disabled:opacity-50"
           >
-            {uploading ? (
+            {pending ? (
               <>
                 <div className="animate-spin w-5 h-5 border-2 border-gold border-t-transparent rounded-full" />
                 <span>{progress.done}/{progress.total}</span>
