@@ -1,9 +1,8 @@
 "use client";
 
-import { useState } from "react";
-import { useRouter } from "next/navigation";
-import { createClient } from "@/lib/supabase/client";
+import { useState, useTransition } from "react";
 import { useToast } from "@/context/ToastContext";
+import { updateOrderStatus } from "./actions";
 
 const STATUSES = [
   { key: "pending", label: "Chờ xác nhận" },
@@ -30,47 +29,27 @@ export default function OrderStatusUpdater({
   currentStatus: string;
   currentTracking: string | null;
 }) {
-  const router = useRouter();
   const toast = useToast();
   const [status, setStatus] = useState(currentStatus);
   const [tracking, setTracking] = useState(currentTracking ?? "");
-  const [saving, setSaving] = useState(false);
+  const [pending, startTransition] = useTransition();
 
-  const update = async () => {
-    console.log("[OSU] click Lưu — start", { orderId, status, tracking, currentStatus });
-    setSaving(true);
-    try {
-      console.log("[OSU] tạo supabase client...");
-      const supabase = createClient();
-      console.log("[OSU] gửi PATCH /rest/v1/orders...");
+  const onSave = () => {
+    startTransition(async () => {
+      console.log("[OSU] gọi server action updateOrderStatus", { orderId, status, tracking });
       const t0 = Date.now();
-      const { error, status: httpStatus, statusText } = await supabase
-        .from("orders")
-        .update({ status, tracking_number: tracking || null })
-        .eq("id", orderId);
-      console.log(`[OSU] PATCH trả về sau ${Date.now() - t0}ms`, { error, httpStatus, statusText });
-      if (error) {
-        console.error("[OSU] update error", error);
-        const raw = error.message ?? "";
-        const friendly = raw.includes("INVALID_STATUS_TRANSITION")
-          ? `Không thể chuyển từ "${currentStatus}" sang "${status}". Vui lòng chọn trạng thái hợp lệ kế tiếp.`
-          : "Cập nhật thất bại: " + raw;
-        toast.error(friendly);
-        return;
+      const res = await updateOrderStatus(orderId, status, tracking);
+      console.log(`[OSU] server action trả về sau ${Date.now() - t0}ms`, res);
+      if (res.ok) {
+        toast.success("Đã cập nhật đơn hàng");
+      } else {
+        toast.error(res.error);
       }
-      console.log("[OSU] thành công, gọi toast + router.refresh");
-      toast.success("Đã cập nhật đơn hàng");
-      router.refresh();
-    } catch (err) {
-      console.error("[OSU] threw", err);
-      toast.error("Lỗi khi cập nhật: " + (err instanceof Error ? err.message : "không xác định"));
-    } finally {
-      console.log("[OSU] finally — setSaving(false)");
-      setSaving(false);
-    }
+    });
   };
 
   const dirty = status !== currentStatus || (tracking || null) !== currentTracking;
+  const allowed = VALID_NEXT[currentStatus] ?? [currentStatus];
 
   return (
     <div className="bg-white rounded-xl border border-gold/10 p-5">
@@ -82,8 +61,9 @@ export default function OrderStatusUpdater({
             value={status}
             onChange={(e) => setStatus(e.target.value)}
             className="input-field"
+            disabled={pending}
           >
-            {STATUSES.filter((s) => (VALID_NEXT[currentStatus] ?? [currentStatus]).includes(s.key)).map((s) => (
+            {STATUSES.filter((s) => allowed.includes(s.key)).map((s) => (
               <option key={s.key} value={s.key}>{s.label}</option>
             ))}
           </select>
@@ -97,14 +77,16 @@ export default function OrderStatusUpdater({
             onChange={(e) => setTracking(e.target.value)}
             placeholder="VD: GHN-12345678"
             className="input-field"
+            disabled={pending}
           />
         </div>
         <button
-          onClick={update}
-          disabled={!dirty || saving}
+          type="button"
+          onClick={onSave}
+          disabled={!dirty || pending}
           className="btn-burgundy w-full justify-center text-sm"
         >
-          {saving ? "Đang lưu..." : "Lưu thay đổi"}
+          {pending ? "Đang lưu..." : "Lưu thay đổi"}
         </button>
       </div>
     </div>
