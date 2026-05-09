@@ -2,24 +2,9 @@ import Link from "next/link";
 import { createClient } from "@/lib/supabase/server";
 import { formatPrice } from "@/lib/format";
 import OrdersFilter from "./OrdersFilter";
+import StatusBadgeDropdown from "./StatusBadgeDropdown";
 
 export const dynamic = "force-dynamic";
-
-const STATUS_LABEL: Record<string, string> = {
-  pending: "Chờ xác nhận",
-  confirmed: "Đã xác nhận",
-  shipping: "Đang giao",
-  delivered: "Đã giao",
-  cancelled: "Đã hủy",
-};
-
-const STATUS_COLOR: Record<string, string> = {
-  pending: "bg-amber-100 text-amber-700",
-  confirmed: "bg-blue-100 text-blue-700",
-  shipping: "bg-indigo-100 text-indigo-700",
-  delivered: "bg-green-100 text-green-700",
-  cancelled: "bg-red-100 text-red-700",
-};
 
 export default async function AdminOrdersPage({
   searchParams,
@@ -99,9 +84,7 @@ export default async function AdminOrdersPage({
                       {o.payment_method}
                     </td>
                     <td className="px-4 py-3">
-                      <span className={`text-xs px-2 py-1 rounded-full font-medium ${STATUS_COLOR[o.status]}`}>
-                        {STATUS_LABEL[o.status]}
-                      </span>
+                      <StatusBadgeDropdown orderId={o.id} status={o.status} />
                     </td>
                     <td className="px-4 py-3 text-right font-semibold text-burgundy">
                       {formatPrice(o.total)}
