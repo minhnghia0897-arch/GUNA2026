@@ -1,10 +1,9 @@
 "use client";
 
-import { useState } from "react";
-import { useRouter } from "next/navigation";
-import { createClient } from "@/lib/supabase/client";
+import { useState, useTransition } from "react";
 import { useToast } from "@/context/ToastContext";
 import { formatPrice } from "@/lib/format";
+import { createVoucher, updateVoucher, deleteVoucher } from "./actions";
 
 type Voucher = {
   id: string;
@@ -43,12 +42,12 @@ export default function VouchersClient({
 }: {
   initialVouchers: Voucher[];
 }) {
-  const router = useRouter();
   const toast = useToast();
   const [vouchers, setVouchers] = useState<Voucher[]>(initialVouchers);
   const [editing, setEditing] = useState<Voucher | null>(null);
   const [form, setForm] = useState<Omit<Voucher, "id" | "used_count">>(EMPTY);
   const [showForm, setShowForm] = useState(false);
+  const [pending, startTransition] = useTransition();
 
   const openNew = () => {
     setEditing(null);
@@ -72,38 +71,38 @@ export default function VouchersClient({
     setShowForm(true);
   };
 
-  const submit = async (e: React.FormEvent) => {
+  const submit = (e: React.FormEvent) => {
     e.preventDefault();
-    const supabase = createClient();
-    const payload = { ...form, code: form.code.toUpperCase().trim() };
-    const { data, error } = editing
-      ? await supabase.from("vouchers").update(payload).eq("id", editing.id).select().single()
-      : await supabase.from("vouchers").insert(payload).select().single();
-
-    if (error) {
-      toast.error("Lưu thất bại: " + error.message);
-      return;
-    }
-    if (editing) {
-      setVouchers((vs) => vs.map((v) => (v.id === editing.id ? (data as Voucher) : v)));
-    } else {
-      setVouchers((vs) => [data as Voucher, ...vs]);
-    }
-    setShowForm(false);
-    toast.success(editing ? "Đã cập nhật voucher" : "Đã tạo voucher");
-    router.refresh();
+    const payload = { ...form };
+    startTransition(async () => {
+      const res = editing ? await updateVoucher(editing.id, payload) : await createVoucher(payload);
+      if (!res.ok) {
+        toast.error(res.error);
+        return;
+      }
+      if (res.voucher) {
+        if (editing) {
+          setVouchers((vs) => vs.map((v) => (v.id === editing.id ? res.voucher! : v)));
+        } else {
+          setVouchers((vs) => [res.voucher!, ...vs]);
+        }
+      }
+      setShowForm(false);
+      toast.success(editing ? "Đã cập nhật voucher" : "Đã tạo voucher");
+    });
   };
 
-  const handleDelete = async (id: string) => {
+  const handleDelete = (id: string) => {
     if (!confirm("Xóa voucher này?")) return;
-    const supabase = createClient();
-    const { error } = await supabase.from("vouchers").delete().eq("id", id);
-    if (error) {
-      toast.error("Xóa thất bại");
-      return;
-    }
-    setVouchers((vs) => vs.filter((v) => v.id !== id));
-    toast.success("Đã xóa voucher");
+    startTransition(async () => {
+      const res = await deleteVoucher(id);
+      if (!res.ok) {
+        toast.error(res.error);
+        return;
+      }
+      setVouchers((vs) => vs.filter((v) => v.id !== id));
+      toast.success("Đã xóa voucher");
+    });
   };
 
   return (
@@ -199,7 +198,7 @@ export default function VouchersClient({
             </label>
           </div>
           <div className="flex gap-3 pt-2">
-            <button type="submit" className="btn-gold">{editing ? "Cập nhật" : "Tạo voucher"}</button>
+            <button type="submit" disabled={pending} className="btn-gold">{pending ? "Đang lưu..." : editing ? "Cập nhật" : "Tạo voucher"}</button>
             <button type="button" onClick={() => setShowForm(false)} className="btn-outline-gold">Hủy</button>
           </div>
         </form>

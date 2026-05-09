@@ -1,11 +1,10 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useTransition } from "react";
 import { useRouter } from "next/navigation";
-import { createClient } from "@/lib/supabase/client";
 import { useToast } from "@/context/ToastContext";
 import ImageUpload from "@/components/admin/ImageUpload";
-import { revalidateStorefront } from "@/app/actions";
+import { createArticle, updateArticle, deleteArticle } from "./actions";
 
 export type ArticleFormValues = {
   id?: string;
@@ -47,58 +46,52 @@ export default function ArticleForm({ initial, isNew }: { initial?: ArticleFormV
   const router = useRouter();
   const toast = useToast();
   const [form, setForm] = useState<ArticleFormValues>(initial ?? EMPTY);
-  const [saving, setSaving] = useState(false);
+  const [pending, startTransition] = useTransition();
 
   const update = <K extends keyof ArticleFormValues>(k: K, v: ArticleFormValues[K]) =>
     setForm((f) => ({ ...f, [k]: v }));
 
-  const submit = async (e: React.FormEvent) => {
+  const submit = (e: React.FormEvent) => {
     e.preventDefault();
     if (!form.slug || !form.title) {
       toast.error("Vui lòng nhập slug và tiêu đề");
       return;
     }
-    setSaving(true);
-    try {
-      const supabase = createClient();
-      const payload = {
-        slug: form.slug,
-        title: form.title,
-        excerpt: form.excerpt || null,
-        content: form.content || null,
-        category: form.category || null,
-        image: form.image || null,
-        read_time: form.read_time || null,
-        status: form.status,
-        published_at: form.published_at,
-      };
-      const { error } = isNew
-        ? await supabase.from("articles").insert(payload)
-        : await supabase.from("articles").update(payload).eq("id", form.id!);
-      if (error) {
-        toast.error("Lưu thất bại: " + error.message);
+    const payload = {
+      slug: form.slug,
+      title: form.title,
+      excerpt: form.excerpt || null,
+      content: form.content || null,
+      category: form.category || null,
+      image: form.image || null,
+      read_time: form.read_time || null,
+      status: form.status,
+      published_at: form.published_at,
+    };
+    startTransition(async () => {
+      const res = isNew ? await createArticle(payload) : await updateArticle(form.id!, payload);
+      if (!res.ok) {
+        toast.error(res.error);
         return;
       }
       toast.success(isNew ? "Đã tạo bài viết" : "Đã cập nhật");
-      await revalidateStorefront("blog");
       router.push("/admin/articles");
-    } catch (err) {
-      console.error("[ArticleForm] save threw", err);
-      toast.error("Lỗi: " + (err instanceof Error ? err.message : "không xác định"));
-    } finally {
-      setSaving(false);
-    }
-    router.refresh();
+      router.refresh();
+    });
   };
 
-  const handleDelete = async () => {
+  const handleDelete = () => {
     if (!form.id || !confirm("Xóa bài viết này?")) return;
-    const supabase = createClient();
-    const { error } = await supabase.from("articles").delete().eq("id", form.id);
-    if (error) return toast.error("Xóa thất bại");
-    toast.success("Đã xóa");
-    router.push("/admin/articles");
-    router.refresh();
+    startTransition(async () => {
+      const res = await deleteArticle(form.id!);
+      if (!res.ok) {
+        toast.error(res.error);
+        return;
+      }
+      toast.success("Đã xóa");
+      router.push("/admin/articles");
+      router.refresh();
+    });
   };
 
   return (
@@ -184,8 +177,8 @@ export default function ArticleForm({ initial, isNew }: { initial?: ArticleFormV
       </div>
 
       <div className="flex gap-3 sticky bottom-0 bg-white py-4 border-t border-gold/10">
-        <button type="submit" disabled={saving} className="btn-gold">
-          {saving ? "Đang lưu..." : isNew ? "Tạo bài viết" : "Cập nhật"}
+        <button type="submit" disabled={pending} className="btn-gold">
+          {pending ? "Đang lưu..." : isNew ? "Tạo bài viết" : "Cập nhật"}
         </button>
         {!isNew && (
           <button type="button" onClick={handleDelete} className="text-red-600 text-sm px-4 hover:underline">
