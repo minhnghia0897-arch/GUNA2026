@@ -1,18 +1,16 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useTransition } from "react";
 import Link from "next/link";
-import { useRouter } from "next/navigation";
-import { createClient } from "@/lib/supabase/client";
 import { useToast } from "@/context/ToastContext";
 import type { DbPolicy } from "@/lib/supabase/cms-types";
-import { revalidateStorefront } from "@/app/actions";
+import { updatePolicy } from "./actions";
 
 export default function PoliciesClient({ initial }: { initial: DbPolicy[] }) {
-  const router = useRouter();
   const toast = useToast();
   const [policies, setPolicies] = useState<DbPolicy[]>(initial);
   const [activeId, setActiveId] = useState<string | null>(initial[0]?.id ?? null);
+  const [pending, startTransition] = useTransition();
 
   const active = policies.find((p) => p.id === activeId) ?? null;
 
@@ -21,20 +19,20 @@ export default function PoliciesClient({ initial }: { initial: DbPolicy[] }) {
     setPolicies((ps) => ps.map((p) => (p.id === active.id ? { ...p, [k]: v } : p)));
   };
 
-  const save = async () => {
+  const save = () => {
     if (!active) return;
-    const supabase = createClient();
-    const { error } = await supabase
-      .from("policies")
-      .update({ title: active.title, content: active.content, slug: active.slug })
-      .eq("id", active.id);
-    if (error) {
-      toast.error("Lưu thất bại: " + error.message);
-      return;
-    }
-    toast.success("Đã lưu chính sách");
-    await revalidateStorefront("policies");
-    router.refresh();
+    startTransition(async () => {
+      const res = await updatePolicy(active.id, {
+        slug: active.slug,
+        title: active.title,
+        content: active.content ?? null,
+      });
+      if (!res.ok) {
+        toast.error(res.error);
+        return;
+      }
+      toast.success("Đã lưu chính sách");
+    });
   };
 
   return (
@@ -91,7 +89,7 @@ export default function PoliciesClient({ initial }: { initial: DbPolicy[] }) {
               </p>
             </div>
             <div className="flex gap-3 pt-2 border-t border-gold/10">
-              <button onClick={save} className="btn-gold">Lưu thay đổi</button>
+              <button onClick={save} disabled={pending} className="btn-gold">{pending ? "Đang lưu..." : "Lưu thay đổi"}</button>
               <Link href={`/policies/${active.slug}`} target="_blank" className="btn-outline-gold">
                 Xem trang →
               </Link>

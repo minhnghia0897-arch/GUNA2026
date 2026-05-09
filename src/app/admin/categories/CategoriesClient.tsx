@@ -1,10 +1,8 @@
 "use client";
 
-import { useState } from "react";
-import { useRouter } from "next/navigation";
-import { createClient } from "@/lib/supabase/client";
+import { useState, useTransition } from "react";
 import { useToast } from "@/context/ToastContext";
-import { revalidateStorefront } from "@/app/actions";
+import { createCategory, updateCategory, deleteCategory } from "./actions";
 
 type Category = { id: string; slug: string; label: string; position: number };
 
@@ -28,12 +26,12 @@ export default function CategoriesClient({
   initial: Category[];
   productCounts: Record<string, number>;
 }) {
-  const router = useRouter();
   const toast = useToast();
   const [list, setList] = useState<Category[]>(initial);
   const [editing, setEditing] = useState<Category | null>(null);
   const [form, setForm] = useState<Omit<Category, "id">>(EMPTY);
   const [showForm, setShowForm] = useState(false);
+  const [pending, startTransition] = useTransition();
 
   const openNew = () => {
     setEditing(null);
@@ -47,49 +45,47 @@ export default function CategoriesClient({
     setShowForm(true);
   };
 
-  const submit = async (e: React.FormEvent) => {
+  const submit = (e: React.FormEvent) => {
     e.preventDefault();
     if (!form.slug || !form.label) {
       toast.error("Vui lòng nhập slug và tên");
       return;
     }
-    const supabase = createClient();
-    const { data, error } = editing
-      ? await supabase.from("categories").update(form).eq("id", editing.id).select().single()
-      : await supabase.from("categories").insert(form).select().single();
-
-    if (error) {
-      toast.error("Lưu thất bại: " + error.message);
-      return;
-    }
-    if (editing) {
-      setList((cs) => cs.map((c) => (c.id === editing.id ? (data as Category) : c)));
-    } else {
-      setList((cs) => [...cs, data as Category]);
-    }
-    setShowForm(false);
-    toast.success(editing ? "Đã cập nhật danh mục" : "Đã tạo danh mục");
-    await revalidateStorefront("products");
-    router.refresh();
+    const payload = { ...form };
+    startTransition(async () => {
+      const res = editing ? await updateCategory(editing.id, payload) : await createCategory(payload);
+      if (!res.ok) {
+        toast.error(res.error);
+        return;
+      }
+      if (res.category) {
+        if (editing) {
+          setList((cs) => cs.map((c) => (c.id === editing.id ? res.category! : c)));
+        } else {
+          setList((cs) => [...cs, res.category!]);
+        }
+      }
+      setShowForm(false);
+      toast.success(editing ? "Đã cập nhật danh mục" : "Đã tạo danh mục");
+    });
   };
 
-  const handleDelete = async (c: Category) => {
+  const handleDelete = (c: Category) => {
     const count = productCounts[c.slug] ?? 0;
     if (count > 0) {
       toast.error(`Không thể xóa: còn ${count} sản phẩm thuộc danh mục này`);
       return;
     }
     if (!confirm(`Xóa danh mục "${c.label}"?`)) return;
-    const supabase = createClient();
-    const { error } = await supabase.from("categories").delete().eq("id", c.id);
-    if (error) {
-      toast.error("Xóa thất bại: " + error.message);
-      return;
-    }
-    setList((cs) => cs.filter((x) => x.id !== c.id));
-    toast.success("Đã xóa danh mục");
-    await revalidateStorefront("products");
-    router.refresh();
+    startTransition(async () => {
+      const res = await deleteCategory(c.id);
+      if (!res.ok) {
+        toast.error(res.error);
+        return;
+      }
+      setList((cs) => cs.filter((x) => x.id !== c.id));
+      toast.success("Đã xóa danh mục");
+    });
   };
 
   return (
@@ -133,7 +129,7 @@ export default function CategoriesClient({
             </div>
           </div>
           <div className="flex gap-3 pt-2">
-            <button type="submit" className="btn-gold">{editing ? "Cập nhật" : "Tạo danh mục"}</button>
+            <button type="submit" disabled={pending} className="btn-gold">{pending ? "Đang lưu..." : editing ? "Cập nhật" : "Tạo danh mục"}</button>
             <button type="button" onClick={() => setShowForm(false)} className="btn-outline-gold">Hủy</button>
           </div>
         </form>

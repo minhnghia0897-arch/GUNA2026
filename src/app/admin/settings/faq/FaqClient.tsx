@@ -1,11 +1,9 @@
 "use client";
 
-import { useState } from "react";
-import { useRouter } from "next/navigation";
-import { createClient } from "@/lib/supabase/client";
+import { useState, useTransition } from "react";
 import { useToast } from "@/context/ToastContext";
 import type { DbFaq } from "@/lib/supabase/cms-types";
-import { revalidateStorefront } from "@/app/actions";
+import { createFaq, updateFaq, deleteFaq } from "./actions";
 
 const EMPTY: Omit<DbFaq, "id"> = {
   category: "Đặt hàng",
@@ -16,12 +14,12 @@ const EMPTY: Omit<DbFaq, "id"> = {
 };
 
 export default function FaqClient({ initial }: { initial: DbFaq[] }) {
-  const router = useRouter();
   const toast = useToast();
   const [faqs, setFaqs] = useState<DbFaq[]>(initial);
   const [editing, setEditing] = useState<DbFaq | null>(null);
   const [form, setForm] = useState<Omit<DbFaq, "id">>(EMPTY);
   const [showForm, setShowForm] = useState(false);
+  const [pending, startTransition] = useTransition();
 
   const categories = Array.from(new Set(faqs.map((f) => f.category)));
 
@@ -39,34 +37,38 @@ export default function FaqClient({ initial }: { initial: DbFaq[] }) {
     setShowForm(true);
   };
 
-  const submit = async (e: React.FormEvent) => {
+  const submit = (e: React.FormEvent) => {
     e.preventDefault();
-    const supabase = createClient();
-    const { data, error } = editing
-      ? await supabase.from("faqs").update(form).eq("id", editing.id).select().single()
-      : await supabase.from("faqs").insert(form).select().single();
-    if (error) {
-      toast.error("Lưu thất bại");
-      return;
-    }
-    if (editing) {
-      setFaqs((fs) => fs.map((f) => (f.id === editing.id ? (data as DbFaq) : f)));
-    } else {
-      setFaqs((fs) => [...fs, data as DbFaq]);
-    }
-    setShowForm(false);
-    toast.success(editing ? "Đã cập nhật" : "Đã thêm câu hỏi");
-    await revalidateStorefront("policies");
-    router.refresh();
+    const payload = { ...form };
+    startTransition(async () => {
+      const res = editing ? await updateFaq(editing.id, payload) : await createFaq(payload);
+      if (!res.ok) {
+        toast.error(res.error);
+        return;
+      }
+      if (res.faq) {
+        if (editing) {
+          setFaqs((fs) => fs.map((f) => (f.id === editing.id ? res.faq! : f)));
+        } else {
+          setFaqs((fs) => [...fs, res.faq!]);
+        }
+      }
+      setShowForm(false);
+      toast.success(editing ? "Đã cập nhật" : "Đã thêm câu hỏi");
+    });
   };
 
-  const handleDelete = async (id: string) => {
+  const handleDelete = (id: string) => {
     if (!confirm("Xóa câu hỏi này?")) return;
-    const supabase = createClient();
-    const { error } = await supabase.from("faqs").delete().eq("id", id);
-    if (error) return toast.error("Xóa thất bại");
-    setFaqs((fs) => fs.filter((f) => f.id !== id));
-    toast.success("Đã xóa");
+    startTransition(async () => {
+      const res = await deleteFaq(id);
+      if (!res.ok) {
+        toast.error(res.error);
+        return;
+      }
+      setFaqs((fs) => fs.filter((f) => f.id !== id));
+      toast.success("Đã xóa");
+    });
   };
 
   const grouped = faqs.reduce((acc: Record<string, DbFaq[]>, f) => {
@@ -132,7 +134,7 @@ export default function FaqClient({ initial }: { initial: DbFaq[] }) {
             </label>
           </div>
           <div className="flex gap-3 pt-2">
-            <button type="submit" className="btn-gold">{editing ? "Cập nhật" : "Thêm câu hỏi"}</button>
+            <button type="submit" disabled={pending} className="btn-gold">{pending ? "Đang lưu..." : editing ? "Cập nhật" : "Thêm câu hỏi"}</button>
             <button type="button" onClick={() => setShowForm(false)} className="btn-outline-gold">Hủy</button>
           </div>
         </form>

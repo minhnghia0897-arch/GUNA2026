@@ -1,13 +1,11 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useTransition } from "react";
 import Image from "next/image";
-import { useRouter } from "next/navigation";
-import { createClient } from "@/lib/supabase/client";
 import { useToast } from "@/context/ToastContext";
 import ImageUpload from "@/components/admin/ImageUpload";
 import type { DbBanner } from "@/lib/supabase/cms-types";
-import { revalidateStorefront } from "@/app/actions";
+import { createBanner, updateBanner, deleteBanner } from "./actions";
 
 const TYPE_OPTIONS: { key: DbBanner["type"]; label: string }[] = [
   { key: "hero", label: "Hero homepage" },
@@ -31,12 +29,12 @@ const EMPTY: Omit<DbBanner, "id"> = {
 };
 
 export default function BannersClient({ initial }: { initial: DbBanner[] }) {
-  const router = useRouter();
   const toast = useToast();
   const [banners, setBanners] = useState<DbBanner[]>(initial);
   const [editing, setEditing] = useState<DbBanner | null>(null);
   const [form, setForm] = useState<Omit<DbBanner, "id">>(EMPTY);
   const [showForm, setShowForm] = useState(false);
+  const [pending, startTransition] = useTransition();
 
   const openNew = () => {
     setEditing(null);
@@ -55,9 +53,8 @@ export default function BannersClient({ initial }: { initial: DbBanner[] }) {
     setEditing(null);
   };
 
-  const submit = async (e: React.FormEvent) => {
+  const submit = (e: React.FormEvent) => {
     e.preventDefault();
-    const supabase = createClient();
     const payload = {
       ...form,
       title: form.title || null,
@@ -69,34 +66,35 @@ export default function BannersClient({ initial }: { initial: DbBanner[] }) {
       starts_at: form.starts_at || null,
       ends_at: form.ends_at || null,
     };
-    const { data, error } = editing
-      ? await supabase.from("banners").update(payload).eq("id", editing.id).select().single()
-      : await supabase.from("banners").insert(payload).select().single();
-    if (error) {
-      toast.error("Lưu thất bại: " + error.message);
-      return;
-    }
-    if (editing) {
-      setBanners((bs) => bs.map((b) => (b.id === editing.id ? (data as DbBanner) : b)));
-    } else {
-      setBanners((bs) => [...bs, data as DbBanner]);
-    }
-    setShowForm(false);
-    toast.success(editing ? "Đã cập nhật banner" : "Đã tạo banner");
-    await revalidateStorefront("all");
-    router.refresh();
+    startTransition(async () => {
+      const res = editing ? await updateBanner(editing.id, payload) : await createBanner(payload);
+      if (!res.ok) {
+        toast.error(res.error);
+        return;
+      }
+      if (res.banner) {
+        if (editing) {
+          setBanners((bs) => bs.map((b) => (b.id === editing.id ? res.banner! : b)));
+        } else {
+          setBanners((bs) => [...bs, res.banner!]);
+        }
+      }
+      setShowForm(false);
+      toast.success(editing ? "Đã cập nhật banner" : "Đã tạo banner");
+    });
   };
 
-  const handleDelete = async (id: string) => {
+  const handleDelete = (id: string) => {
     if (!confirm("Xóa banner này?")) return;
-    const supabase = createClient();
-    const { error } = await supabase.from("banners").delete().eq("id", id);
-    if (error) {
-      toast.error("Xóa thất bại");
-      return;
-    }
-    setBanners((bs) => bs.filter((b) => b.id !== id));
-    toast.success("Đã xóa banner");
+    startTransition(async () => {
+      const res = await deleteBanner(id);
+      if (!res.ok) {
+        toast.error(res.error);
+        return;
+      }
+      setBanners((bs) => bs.filter((b) => b.id !== id));
+      toast.success("Đã xóa banner");
+    });
   };
 
   const update = <K extends keyof Omit<DbBanner, "id">>(k: K, v: Omit<DbBanner, "id">[K]) =>
@@ -169,7 +167,7 @@ export default function BannersClient({ initial }: { initial: DbBanner[] }) {
             </label>
           </div>
           <div className="flex gap-3 pt-2">
-            <button type="submit" className="btn-gold">{editing ? "Cập nhật" : "Tạo banner"}</button>
+            <button type="submit" disabled={pending} className="btn-gold">{pending ? "Đang lưu..." : editing ? "Cập nhật" : "Tạo banner"}</button>
             <button type="button" onClick={cancel} className="btn-outline-gold">Hủy</button>
           </div>
         </form>

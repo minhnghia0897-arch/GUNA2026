@@ -1,18 +1,16 @@
 "use client";
 
-import { useState } from "react";
-import { useRouter } from "next/navigation";
-import { createClient } from "@/lib/supabase/client";
+import { useState, useTransition } from "react";
 import { useToast } from "@/context/ToastContext";
 import ImageUpload from "@/components/admin/ImageUpload";
 import type { DbSiteSection } from "@/lib/supabase/cms-types";
-import { revalidateStorefront } from "@/app/actions";
+import { updateSection } from "./actions";
 
 export default function SectionsClient({ initial }: { initial: DbSiteSection[] }) {
-  const router = useRouter();
   const toast = useToast();
   const [sections, setSections] = useState<DbSiteSection[]>(initial);
   const [editing, setEditing] = useState<DbSiteSection | null>(null);
+  const [pending, startTransition] = useTransition();
 
   const grouped = sections.reduce((acc: Record<string, DbSiteSection[]>, s) => {
     if (!acc[s.page_slug]) acc[s.page_slug] = [];
@@ -20,19 +18,18 @@ export default function SectionsClient({ initial }: { initial: DbSiteSection[] }
     return acc;
   }, {});
 
-  const save = async (s: DbSiteSection) => {
-    const supabase = createClient();
+  const save = (s: DbSiteSection) => {
     const { id, ...rest } = s;
-    const { error } = await supabase.from("site_sections").update(rest).eq("id", id);
-    if (error) {
-      toast.error("Lưu thất bại: " + error.message);
-      return;
-    }
-    setSections((arr) => arr.map((x) => (x.id === s.id ? s : x)));
-    setEditing(null);
-    toast.success("Đã lưu section");
-    await revalidateStorefront("all");
-    router.refresh();
+    startTransition(async () => {
+      const res = await updateSection(id, rest);
+      if (!res.ok) {
+        toast.error(res.error);
+        return;
+      }
+      setSections((arr) => arr.map((x) => (x.id === s.id ? s : x)));
+      setEditing(null);
+      toast.success("Đã lưu section");
+    });
   };
 
   return (
@@ -52,6 +49,7 @@ export default function SectionsClient({ initial }: { initial: DbSiteSection[] }
                     onChange={setEditing}
                     onSave={() => save(editing)}
                     onCancel={() => setEditing(null)}
+                    pending={pending}
                   />
                 ) : (
                   <div className="flex items-start gap-4">
@@ -86,11 +84,13 @@ function SectionEditor({
   onChange,
   onSave,
   onCancel,
+  pending,
 }: {
   section: DbSiteSection;
   onChange: (s: DbSiteSection) => void;
   onSave: () => void;
   onCancel: () => void;
+  pending: boolean;
 }) {
   const update = <K extends keyof DbSiteSection>(k: K, v: DbSiteSection[K]) =>
     onChange({ ...section, [k]: v });
@@ -138,7 +138,7 @@ function SectionEditor({
         <span>Hiển thị</span>
       </label>
       <div className="flex gap-3 pt-2">
-        <button onClick={onSave} className="btn-gold text-sm">Lưu</button>
+        <button onClick={onSave} disabled={pending} className="btn-gold text-sm">{pending ? "Đang lưu..." : "Lưu"}</button>
         <button onClick={onCancel} className="btn-outline-gold text-sm">Hủy</button>
       </div>
     </div>

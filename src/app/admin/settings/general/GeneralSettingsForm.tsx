@@ -1,41 +1,32 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useTransition } from "react";
 import { useRouter } from "next/navigation";
-import { createClient } from "@/lib/supabase/client";
 import { useToast } from "@/context/ToastContext";
 import ImageUpload from "@/components/admin/ImageUpload";
 import type { DbSiteSettings } from "@/lib/supabase/cms-types";
-import { revalidateStorefront } from "@/app/actions";
+import { updateSiteSettings } from "./actions";
 
 export default function GeneralSettingsForm({ initial }: { initial: DbSiteSettings }) {
   const router = useRouter();
   const toast = useToast();
   const [form, setForm] = useState<DbSiteSettings>(initial);
-  const [saving, setSaving] = useState(false);
+  const [pending, startTransition] = useTransition();
 
   const update = <K extends keyof DbSiteSettings>(k: K, v: DbSiteSettings[K]) =>
     setForm((f) => ({ ...f, [k]: v }));
 
-  const submit = async (e: React.FormEvent) => {
+  const submit = (e: React.FormEvent) => {
     e.preventDefault();
-    setSaving(true);
-    try {
-      const supabase = createClient();
-      const { error } = await supabase.from("site_settings").update(form).eq("id", "main");
-      if (error) {
-        toast.error("Lưu thất bại: " + error.message);
+    startTransition(async () => {
+      const res = await updateSiteSettings(form);
+      if (!res.ok) {
+        toast.error(res.error);
         return;
       }
       toast.success("Đã lưu thay đổi");
-      await revalidateStorefront("settings");
       router.refresh();
-    } catch (err) {
-      console.error("[GeneralSettings] save threw", err);
-      toast.error("Lỗi: " + (err instanceof Error ? err.message : "không xác định"));
-    } finally {
-      setSaving(false);
-    }
+    });
   };
 
   return (
@@ -145,8 +136,8 @@ export default function GeneralSettingsForm({ initial }: { initial: DbSiteSettin
       </Section>
 
       <div className="sticky bottom-0 bg-white py-4 border-t border-gold/10 flex gap-3">
-        <button type="submit" disabled={saving} className="btn-gold">
-          {saving ? "Đang lưu..." : "Lưu thay đổi"}
+        <button type="submit" disabled={pending} className="btn-gold">
+          {pending ? "Đang lưu..." : "Lưu thay đổi"}
         </button>
         <button type="button" onClick={() => router.push("/admin/settings")} className="btn-outline-gold">
           Hủy
