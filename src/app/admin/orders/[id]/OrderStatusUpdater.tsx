@@ -37,15 +37,20 @@ export default function OrderStatusUpdater({
   const [saving, setSaving] = useState(false);
 
   const update = async () => {
+    console.log("[OSU] click Lưu — start", { orderId, status, tracking, currentStatus });
     setSaving(true);
     try {
+      console.log("[OSU] tạo supabase client...");
       const supabase = createClient();
-      const { error } = await supabase
+      console.log("[OSU] gửi PATCH /rest/v1/orders...");
+      const t0 = Date.now();
+      const { error, status: httpStatus, statusText } = await supabase
         .from("orders")
         .update({ status, tracking_number: tracking || null })
         .eq("id", orderId);
+      console.log(`[OSU] PATCH trả về sau ${Date.now() - t0}ms`, { error, httpStatus, statusText });
       if (error) {
-        console.error("[OrderStatusUpdater] update error", error);
+        console.error("[OSU] update error", error);
         const raw = error.message ?? "";
         const friendly = raw.includes("INVALID_STATUS_TRANSITION")
           ? `Không thể chuyển từ "${currentStatus}" sang "${status}". Vui lòng chọn trạng thái hợp lệ kế tiếp.`
@@ -53,12 +58,14 @@ export default function OrderStatusUpdater({
         toast.error(friendly);
         return;
       }
+      console.log("[OSU] thành công, gọi toast + router.refresh");
       toast.success("Đã cập nhật đơn hàng");
       router.refresh();
     } catch (err) {
-      console.error("[OrderStatusUpdater] threw", err);
+      console.error("[OSU] threw", err);
       toast.error("Lỗi khi cập nhật: " + (err instanceof Error ? err.message : "không xác định"));
     } finally {
+      console.log("[OSU] finally — setSaving(false)");
       setSaving(false);
     }
   };
