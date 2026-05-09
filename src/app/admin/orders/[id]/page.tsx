@@ -43,10 +43,11 @@ export default async function AdminOrderDetail({ params }: { params: Promise<{ i
             ← Tất cả đơn hàng
           </Link>
           <h1 className="font-serif text-2xl text-burgundy mt-1">Đơn #{o.order_code}</h1>
-          <p className="text-xs text-gray-500">
+          <p className="text-xs text-gray-500" suppressHydrationWarning>
             {new Date(o.created_at).toLocaleString("vi-VN", {
               weekday: "long", day: "2-digit", month: "2-digit", year: "numeric",
               hour: "2-digit", minute: "2-digit",
+              timeZone: "Asia/Ho_Chi_Minh",
             })}
           </p>
         </div>
@@ -107,8 +108,8 @@ export default async function AdminOrderDetail({ params }: { params: Promise<{ i
                     <div className="w-2 h-2 rounded-full bg-burgundy mt-1.5 flex-shrink-0" />
                     <div className="flex-1">
                       <p className="text-gray-800">{t.description}</p>
-                      <p className="text-xs text-gray-400 mt-0.5">
-                        {new Date(t.created_at).toLocaleString("vi-VN")} · {t.actor}
+                      <p className="text-xs text-gray-400 mt-0.5" suppressHydrationWarning>
+                        {new Date(t.created_at).toLocaleString("vi-VN", { timeZone: "Asia/Ho_Chi_Minh" })} · {t.actor}
                       </p>
                     </div>
                   </div>

@@ -128,7 +128,7 @@ export default function Footer() {
 
       <div className="border-t border-white/5">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6 flex flex-col md:flex-row items-center justify-between gap-4">
-          <p className="text-white/30 text-xs font-normal">
+          <p className="text-white/30 text-xs font-normal" suppressHydrationWarning>
             &copy; {new Date().getFullYear()} {shopName} {tagline}. Đã đăng ký bản quyền.
           </p>
           <div className="flex items-center gap-6">
