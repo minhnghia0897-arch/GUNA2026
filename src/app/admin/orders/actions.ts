@@ -58,3 +58,53 @@ export async function quickUpdateOrderStatus(
   revalidatePath("/admin/orders");
   return { ok: true };
 }
+
+export type BulkStatusResult =
+  | { ok: true; updated: number }
+  | { ok: false; error: string };
+
+export async function bulkUpdateOrderStatus(
+  orderIds: string[],
+  currentStatus: string,
+  nextStatus: string
+): Promise<BulkStatusResult> {
+  if (!orderIds.length) {
+    return { ok: false, error: "Không có đơn nào được chọn" };
+  }
+  if (!VALID_NEXT[currentStatus]?.includes(nextStatus)) {
+    return { ok: false, error: "Trạng thái không hợp lệ" };
+  }
+
+  const supabase = await createClient();
+
+  const { data: { user } } = await supabase.auth.getUser();
+  if (!user) {
+    return { ok: false, error: "Bạn chưa đăng nhập" };
+  }
+
+  const { data: profile } = await supabase
+    .from("profiles")
+    .select("role")
+    .eq("id", user.id)
+    .maybeSingle();
+  if (!profile || (profile.role !== "admin" && profile.role !== "staff")) {
+    return { ok: false, error: "Tài khoản không có quyền quản trị" };
+  }
+
+  const { error, count } = await supabase
+    .from("orders")
+    .update({ status: nextStatus }, { count: "exact" })
+    .in("id", orderIds)
+    .eq("status", currentStatus);
+
+  if (error) {
+    const raw = error.message ?? "";
+    if (raw.includes("INVALID_STATUS_TRANSITION")) {
+      return { ok: false, error: "Trạng thái không hợp lệ (DB rejected)" };
+    }
+    return { ok: false, error: "Cập nhật thất bại: " + raw };
+  }
+
+  revalidatePath("/admin/orders");
+  return { ok: true, updated: count ?? 0 };
+}
